@@ -24,6 +24,13 @@ para el proyecto se usara el estilo de llaves allman.
 Por cada malloc o descriptor de archivo abierto se liberara la memoria o cerrara el descriptor
 segun se requiera sea al final de la funcion o en una funcion auxiliar dedicada a eso.
 
+### codigo fuente
+
+El codigo fuente es diferenciado en varios archivos de la forma "un archivo, un proposito",
+proporcionando modularidad al proyecto y teniendo nombres cortos en español que describan
+de forma muy generalizada su proposito, por ejemplo '_interfaz.c_' con su respectivo '_interfaz.h_'.
+
+_ejemplo sencillo:_
 ```c
 #include <stdlib.h>
 #include <stdio.h>
