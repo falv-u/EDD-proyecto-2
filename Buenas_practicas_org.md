@@ -30,6 +30,22 @@ El codigo fuente es diferenciado en varios archivos de la forma "un archivo, un 
 proporcionando modularidad al proyecto y teniendo nombres cortos en español que describan
 de forma muy generalizada su proposito, por ejemplo '_interfaz.c_' con su respectivo '_interfaz.h_'.
 
+### arbol basico del proyecto
+```sh
+.
+├── .gitignore
+├── Buenas_practicas_org.md
+├── Makefile
+├── README.md
+├── Otros-archivos-relacionados
+├── docs
+├── include
+│   └── *.h
+└── src
+    └── *.c
+
+
+```
 _ejemplo sencillo:_
 ```c
 #include <stdlib.h>
@@ -39,15 +55,20 @@ _ejemplo sencillo:_
 
 #define MAX 67
 
-void LimpiarPantalla(void)
+void limpiar_pantalla(void)
 {
 	system(clear);
 }
 
 int main(void)
 {
-	/* codigo anterior */
-
+	codigoImprimir[MAX];
+	/*...*/
+	for (int i = 0; i < MAX; i++)
+	{
+		printf("%s\n", codigoImprimir[i]);
+	}
+	limpiar_pantalla();
 	return 0;
 }
 ```
