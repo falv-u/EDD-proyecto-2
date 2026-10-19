@@ -1,8 +1,8 @@
 ## Buenas Practicas
 
 ### Convención de nombres
-- **Funciones:** PascalCase
-- **Variables:** snake_case
+- **Funciones:** snake_case
+- **Variables:** camelCase
 - **Macros:** siempre en mayusculas  
 - **Estructuras**: PascalCase con prefijo s_
 - **Enums**: PascalCase con prefijo e_
