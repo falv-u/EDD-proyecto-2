@@ -19,8 +19,8 @@ void asignar_personaje(s_Personaje *pj)
     int opcion = -1;
 
     printf("\nSeleccione un personaje\n");
-    printf("\n<<Gon>>\n\nVida maxima: 110\nAtaque: 12\nDefensa: 6\n");
-    printf("\n<<Killua>>\n\nVida maxima: 90\nAtaque: 15\nDefensa: 4\n");
+    printf("\n1. Gon\n\nVida maxima: 110\nAtaque: 12\nDefensa: 6\n");
+    printf("\n2. Killua\n\nVida maxima: 90\nAtaque: 15\nDefensa: 4\n");
     imprimir_ingresar_opcion();
     opcion = leer_entero_en_rango(1, 2);
 
