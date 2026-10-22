@@ -28,8 +28,8 @@ clean:
 folders:
 	mkdir -p src obj inc build
 
-run:
+run: all
 	@./build/$(EXEC)
 
 send:
-	tar czf $(GRUPO)-$(NTAR).tgz --transform 's,^,$(GRUPO)-$(NTAR)/,' Makefile src incs docs
+	tar czf $(GRUPO)-$(NTAR).tgz --transform 's,^,$(GRUPO)-$(NTAR)/,' Makefile src inc docs
