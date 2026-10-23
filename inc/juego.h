@@ -7,6 +7,8 @@
 #include "inventario.h"
 #include "personaje.h"
 #include "comunes.h"
+#include <stdlib.h>
+#include <time.h>
 
 typedef struct s_GameState
 {

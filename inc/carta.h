@@ -19,6 +19,6 @@ typedef struct
     int valor;
 } s_Carta;
 
-void cartas(s_GameState *gs);
+s_Carta carta_aleatoria();
 
 #endif
