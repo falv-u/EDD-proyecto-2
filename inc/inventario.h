@@ -19,7 +19,8 @@ void inventario(s_GameState *gs);
 void vaciar_inventario(Lista I);
 void agregar_carta(Lista I, s_Carta carta, Posicion P);
 void eliminar_carta(Lista I, Posicion P);
-int imprimir_cartas(Lista L);
+void imprimir_cartas(Lista L);
+int cantidad_cartas(Lista L);
 Posicion encontrar_carta(Lista I, int posicion);
 Lista crear_inventario(Lista I);
 
