@@ -11,6 +11,7 @@
 typedef struct s_GameState
 {
     s_Personaje personaje;
+    Lista inventario;
 } s_GameState;
 
 #endif
