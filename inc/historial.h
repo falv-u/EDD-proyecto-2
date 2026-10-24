@@ -2,6 +2,7 @@
 #define HISTORIAL_H
 
 #include "comunes.h"
+#define HISTORIAL_MAX 40
 
 /** 
  * @file historial.h
@@ -50,12 +51,11 @@ historial historial_make_empty(historial);
  * @brief registra ultima accion
  * 
  * @param h	puntero a historial
- * @param acc	identificador a la accion anterior
  * @param desc	se pasa pasa por copia la descripcion de la accion.
  * @param t	tipo de accion.
  * @return 0 si todo va bien, -1 memoria llena y cualquier negativo para otros errores
  */
-int historial_push(historial h, int acc, const char **desc, tipo_accion t );
+int historial_push(historial h, const char **desc, tipo_accion t );
 
 /**
  * @brief Deshace (saca) la accion mas reciente de la pila.

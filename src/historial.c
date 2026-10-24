@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
 #include "historial.h"
 
 static char *copiar_cadena(const char *or)
@@ -15,19 +17,20 @@ static char *copiar_cadena(const char *or)
 	copia = malloc(tam);
 	if (copia == NULL)
 	{
-		fprintf("error: fallo en asignacion para copiar cadena de texto\n");
+		fprintf(stderr, "error: fallo en asignacion para copiar cadena de texto\n");
 		return NULL;
 	}
-	srtcpy(copia, or);
+	strcpy(copia, or);
 	return copia;
 
 }
-historial historial_make_empty(historial h)
+historial historial_make_empty(void)
 {
 	historial h = malloc(sizeof(struct s_historial));
 	if (h == NULL)
 	{
-		fprintf(stderr, "error: falla al asignar memoria para la creacion del historial")
+		fprintf(stderr, "error: falla al asignar memoria para la creacion del historial");
+		return NULL;
 	}
 	h->nodo = NULL;
 	h->cantidad_registros = 0;
@@ -51,7 +54,7 @@ int historial_push(historial h, const char **desc, tipo_accion t )
 	}
 	copia_desc = copiar_cadena(desc);
 
-	if (desc == NULL)
+	if (copia_desc == NULL)
 		return -1;
 
 	nuevo = malloc(sizeof(struct s_NodoHistorial));
@@ -89,9 +92,7 @@ int historial_pop(historial h)
 	
 	free(popear->datos.descripcion);
 	free(popear);
-
-    }
-	
+	return 0;
 }
 
 PosHistorial historial_top(const historial h)
@@ -101,7 +102,7 @@ PosHistorial historial_top(const historial h)
 		fprintf(stderr, "error: historial invalido, apunta a NULL\n");
 		return NULL;
 	}
-	if ( h->siguiente == NULL)
+	if ( h->nodo == NULL)
 	{
 		fprintf(stderr, "error: historial invalido, el top es NULL\n");
 		return NULL;
@@ -122,17 +123,19 @@ PosHistorial historial_siguiente(const PosHistorial pos)
 
 int historial_is_empty(const historial h)
 {
-	if (h.cantidad_registros == 0 && h->siguiente == NULL)
+	if ( h == NULL)
 	{
-		printf("historial no vacio");
-		return 0;
+		fprintf(stderr, "error: historial NULL\n");
+		return -1;
 	}
+	if (h->cantidad_registros == 0 && h->nodo == NULL)
+        	return 1;   /* vacía */
 	if (h.cantidad_registros != 0 || h.cantidad_registros < 0 && h->siguiente == NULL)
 	{
 		fprintf(stderr, "error: valores incongruentes, registros distintos de 0  pero apunta a NULL\n");
 		return -1;
 	}
-	return 1;
+	return 0;
 }
 
 
@@ -141,7 +144,7 @@ void historial_destroy(historial h)
 	PosHistorial actual, siguiente;
 	if (h == NULL)
 	{
-		fprintf("error: historia ya NULL\n");
+		fprintf(stderr, "error: historia ya NULL\n");
 		return;
 	} 
 	actual = h->nodo;
