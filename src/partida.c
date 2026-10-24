@@ -5,88 +5,7 @@
 #include "partida.h"
 
 #define SEP ';'
-
-
-/**
- * @brief Copia una cadena a memoria nueva.
- * @return Copia con malloc, o NULL si falla.
- */
-static char *duplicar(const char *or)
-{
-	char *copia;
-	size_t n;
-
-	if (or == NULL)
-	{
-		return NULL;
-	}
-
-	n = strlen(or) + 1;          /* +1 para el '\0' */
-	copia = malloc(n);
-	if (copia == NULL)
-	{
-		return NULL;
-	}
-
-	memcpy(copia, or, n);        /* memcpy en vez de strcpy: misma idea */
-	return copia;
-}
-
-/**
- * @brief Lee una linea y le quita el '\n' final.
- * @return 0 ok, -1 EOF o linea truncada.
- */
-static int leer_linea(FILE *f, char *buf, size_t tam)
-{
-	size_t n;
-
-	if (fgets(buf, (int)tam, f) == NULL)
-	{
-		return -1;
-	}
-
-	n = strlen(buf);
-	if (n == 0 || buf[n - 1] != '\n')
-	{
-		return -1;
-	}
-
-	buf[n - 1] = '\0';           /* recorta el '\n' */
-	return 0;
-}
-
-/**
- * @brief Saca el siguiente campo de una linea separada por SEP.
- *
- * Modifica la cadena: cambia el ';' por '\0'. Avanza *cursor.
- * Devuelve NULL cuando ya no quedan campos.
- */
-static char *campo(char **cursor)
-{
-	char *ini;
-	char *p;
-
-	if (cursor == NULL || *cursor == NULL)
-	{
-		return NULL;
-	}
-
-	ini = *cursor;
-	p = strchr(ini, SEP);        /* busca el proximo ';' */
-
-	if (p == NULL)
-	{
-		*cursor = NULL;
-	}
-	else
-	{
-		*p = '\0';
-		*cursor = p + 1;
-	}
-
-	return ini;
-}
-
+#define PARTIDA_LINEA_MAX 1024
 /**
  * @brief Nombre textual de un TipoAccion (para guardar).
  */
@@ -110,32 +29,6 @@ static const char *tipo_a_texto(TipoAccion t)
 			 return "A_REGISTRO";
 	}
 }
-
-/**
- * @brief Convierte texto a TipoAccion.
- * @return TipoAccion o -1 si no coincide.
- */
-static int texto_a_tipo(const char *s)
-{
-	if (s == NULL) 
-		return -1;
-
-	if (strcmp(s, "A_CONSUMIBLE")  == 0)
-		return A_CONSUMIBLE;
-	if (strcmp(s, "A_REGISTRO")    == 0)
-		return A_REGISTRO;
-	if (strcmp(s, "A_COMBATE_I")   == 0)
-		return A_COMBATE_I;
-	if (strcmp(s, "A_COM_TURNO")   == 0)
-		return A_COM_TURNO;
-	if (strcmp(s, "A_FIN_COMBATE") == 0)
-		return A_FIN_COMBATE;
-	if (strcmp(s, "A_DESCARTE")    == 0)
-		return A_DESCARTE;
-
-	return -1;
-}
-
 
 int partida_guardar(const s_GameState *gs, const char *ruta)
 {
@@ -251,7 +144,7 @@ int partida_cargar(s_GameState *gs, const char *ruta)
 	if (tok == NULL || strcmp(tok, "PERSONAJE") != 0)
 	{
 		fclose(f);
-		fprintf("error: error de formato en la partida guardada\n");
+		fprintf(stderr,"error: error de formato en la partida guardada\n");
 		return -1;
 	}
 
@@ -363,7 +256,7 @@ int partida_cargar(s_GameState *gs, const char *ruta)
 
 		/* Buscamos la carta por nombre. Asi reconstruimos el s_Carta
 		   con su puntero a literal original (no guardamos punteros). */
-		carta = carta_buscar_por_nombre(nombre_carta);
+//		carta = carta_buscar_por_nombre(nombre_carta);
 		if (carta.nombre == NULL)
 		{
 			fprintf(stderr, "aviso: carta desconocida '%s'\n", nombre_carta);
