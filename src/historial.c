@@ -33,11 +33,14 @@ historial historial_make_empty(void)
 		return NULL;
 	}
 	h->nodo = NULL;
-	h->cantidad_registros = 0;
+	h->CantidadRegistros = 0;
+	h->HayReversionPendiente = false;
+
+	memset(&h->reversion, 0, sizeof(h->reversion));
 	return h;
 }
 
-int historial_push(historial h, const char **desc, tipo_accion t )
+int historial_push(historial h, const char *desc, TipoAccion t )
 {
 	PosHistorial nuevo;
 	char *copia_desc;
@@ -64,12 +67,11 @@ int historial_push(historial h, const char **desc, tipo_accion t )
 		return -1;
 	}
 
-	nuevo->datos.acc         = acc;
 	nuevo->datos.descripcion = copia_desc;
 	nuevo->datos.tipo        = t;
 	nuevo->siguiente         = h->nodo;
 	h->nodo = nuevo;
-	h->cantidad_registros++;
+	h->CantidadRegistros++;
 	return 0;
 }
 
@@ -88,8 +90,10 @@ int historial_pop(historial h)
 	}
 	popear = h->nodo;
 	h->nodo = popear->siguiente;
-	h->cantidad_registros--;
-	
+	h->CantidadRegistros--;
+	h->HayReversionPendiente = false;
+
+	h->reversion = (s_Reversion){0};
 	free(popear->datos.descripcion);
 	free(popear);
 	return 0;
@@ -123,19 +127,25 @@ PosHistorial historial_siguiente(const PosHistorial pos)
 
 int historial_is_empty(const historial h)
 {
-	if ( h == NULL)
+	if (h == NULL)
 	{
 		fprintf(stderr, "error: historial NULL\n");
 		return -1;
 	}
-	if (h->cantidad_registros == 0 && h->nodo == NULL)
-        	return 1;   /* vacía */
-	if (h.cantidad_registros != 0 || h.cantidad_registros < 0 && h->siguiente == NULL)
+
+	if (h->CantidadRegistros == 0 && h->nodo == NULL)
 	{
-		fprintf(stderr, "error: valores incongruentes, registros distintos de 0  pero apunta a NULL\n");
-		return -1;
+		return 1;
 	}
-	return 0;
+
+	if (h->CantidadRegistros > 0 && h->nodo != NULL)
+	{
+		return 0;
+	}
+
+	fprintf(stderr, "error: estado incongruente (registros=%d, nodo=%p)\n",
+	        h->CantidadRegistros, (void *)h->nodo);
+	return -1;
 }
 
 
@@ -155,6 +165,85 @@ void historial_destroy(historial h)
 		free(actual);
 		actual = siguiente;
 	}
+	h->HayReversionPendiente = false;
 	h->nodo = NULL;
-	h->cantidad_registros = 0;
+	h->CantidadRegistros = 0;
+}
+int historial_registrar(historial h, const char *desc, TipoAccion t, const s_Reversion *rev)
+{
+	if (h == NULL)
+	{
+		fprintf(stderr, "error: historial apunta a NULL\n");
+		return -1;
+	}
+
+	if (desc == NULL)
+	{
+		fprintf(stderr, "error: descripcion NULL\n");
+		return -1;
+	}
+
+
+	if (historial_push(h, desc, t) != 0)
+	{
+		return -1;
+	}
+
+	/* Cualquier accion nueva invalida la ventana de reversion anterior. */
+	h->HayReversionPendiente = false;
+
+	if (t == A_DESCARTE && rev != NULL)
+	{
+		h->reversion = *rev;
+		h->HayReversionPendiente = true;
+	}
+
+	return 0;
+}
+
+bool historial_puede_deshacer(const historial h)
+{
+	if (h == NULL)
+	{
+		return false;
+	}
+
+	if (!h->HayReversionPendiente)
+	{
+		return false;
+	}
+
+	if (h->nodo == NULL || h->nodo->datos.tipo != A_DESCARTE)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+int historial_obtener_reversion(const historial h, s_Reversion *out)
+{
+	if (out == NULL)
+	{
+		fprintf(stderr, "error: destino de reversion NULL\n");
+		return -1;
+	}
+
+	if (!historial_puede_deshacer(h))
+	{
+		return -1;
+	}
+
+	*out = h->reversion;
+	return 0;
+}
+
+int historial_deshacer(historial h)
+{
+	if (!historial_puede_deshacer(h))
+	{
+		return -1;
+	}
+
+	return historial_pop(h);
 }
