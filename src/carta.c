@@ -33,3 +33,10 @@ s_Carta carta_aleatoria()
 
    return carta;
 }
+
+void imprimir_carta_sola(s_Carta carta)
+{
+    static const char *tipos[] = {"ataque", "curacion", "defensa", "vida maxima", "especial"};
+
+    printf(" [%s] tipo: %s, valor: %d\n", carta.nombre, tipos[carta.tipo], carta.valor);
+}
