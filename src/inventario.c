@@ -101,21 +101,22 @@ Posicion encontrar_carta(Lista I, int posicion)
     return aux;
 }
 
-void imprimir_cartas(Lista L) //Recorrer la lista e imprimir las cartas mientras aumenta cant para obtener la posicion a elejir
+void imprimir_cartas(Lista L) 
 {
     int cant = 0;
     Posicion aux = L->next;
 
+    printf("\n");
     while(aux != NULL)
     {
         printf("%d. %s\t", cant, aux->carta.nombre);
 
-        if((cant++ % 3) == 0) 
+        if((++cant % 3) == 0) 
             printf("\n");
         
         aux = aux->next;
     }
-    
+    printf("\n");
 }
 
 int cantidad_cartas(Lista L)
