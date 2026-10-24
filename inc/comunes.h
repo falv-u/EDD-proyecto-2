@@ -4,10 +4,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 int leer_entero();
 int leer_entero_en_rango(int min, int max);
 void validar_rango(int *num, int min, int max);
 void imprimir_ingresar_opcion();
-
+bool leer_si_no(void);
 #endif

@@ -7,6 +7,8 @@
 #include "inventario.h"
 #include "personaje.h"
 #include "comunes.h"
+#include "eventos.h"
+#include "exploracion.h"
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>

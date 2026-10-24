@@ -1,9 +1,9 @@
 #include "juego.h"
-
+/*
 void personaje(s_GameState *gs)
 {
     
-}
+}*/
 
 void crear_personaje(s_Personaje *pj, int vida, int vidaMax, int ataque, int defensa, const char *nombre)
 {

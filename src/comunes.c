@@ -40,3 +40,28 @@ int leer_entero_en_rango(int min, int max)
 
     return var;
 }
+
+bool leer_si_no()
+{
+    int c;
+    int extra;
+
+    while(1)
+    {
+        printf("(s/n) > ");
+        c = getchar();
+
+        if(c == EOF)
+            exit(1);
+
+        if(c != '\n')
+            while((extra = getchar()) != '\n' && extra != EOF); // Limpia el buffer
+
+        if(c == 's' || c == 'S')
+            return true;
+        if(c == 'n' || c == 'N')
+            return false;
+
+        printf("\033[1;31mERROR:\033[0m Responde con 's' o 'n'\n");
+    }
+}
