@@ -81,13 +81,39 @@ int partida_guardar(const s_GameState *gs, const char *ruta)
 	}
 	else
 	{
-		fprintf(f, "HISTORIAL%c%d\n", SEP, gs->Historial->CantidadRegistros);
+		int contador = gs->Historial->CantidadRegistros;
+		fprintf(f, "HISTORIAL%c%d\n", SEP, contador);
 
-		for (h = gs->Historial->nodo; h != NULL; h = h->siguiente)
+		/* Reunir nodos (mas nuevo a mas viejo), luego escribir en orden inverso
+		 * (mas viejo a mas nuevo) para que al cargar con push la pila quede correcta. */
+		PosHistorial *nodos = NULL;
+		if (contador > 0)
 		{
-			fprintf(f, "ACCION%c%s%c%s\n",
-			        SEP, tipo_a_texto(h->datos.tipo),
-			        SEP, h->datos.descripcion ? h->datos.descripcion : "");
+			nodos = malloc(contador * sizeof(PosHistorial));
+			if (nodos)
+			{
+				int idx = 0;
+				for (h = gs->Historial->nodo; h != NULL; h = h->siguiente)
+					nodos[idx++] = h;
+				for (int i = contador - 1; i >= 0; i--)
+				{
+					PosHistorial nh = nodos[i];
+					fprintf(f, "ACCION%c%s%c%s\n",
+					        SEP, tipo_a_texto(nh->datos.tipo),
+					        SEP, nh->datos.descripcion ? nh->datos.descripcion : "");
+				}
+				free(nodos);
+			}
+			else
+			{
+				/* Respaldo: escribir en orden natural si falla malloc */
+				for (h = gs->Historial->nodo; h != NULL; h = h->siguiente)
+				{
+					fprintf(f, "ACCION%c%s%c%s\n",
+					        SEP, tipo_a_texto(h->datos.tipo),
+					        SEP, h->datos.descripcion ? h->datos.descripcion : "");
+				}
+			}
 		}
 	}
 
@@ -109,14 +135,22 @@ int partida_cargar(s_GameState *gs, const char *ruta)
 	s_Personaje pj;          /* personaje temporal: solo se aplica si todo ok */
 	char *nombre;
 
-	if (gs == NULL || ruta == NULL)
+	if (gs == NULL)
 	{
+		fprintf(stderr, "error: el estado es invalida\n");
+		return -1;
+	}
+
+	if (ruta == NULL)
+	{
+		fprintf(stderr, "error: la ruta es invalida\n");
 		return -1;
 	}
 
 	f = fopen(ruta, "r");
 	if (f == NULL)
 	{
+		fprintf(stderr, "error: fallo al abrir descriptor de archivo \n");
 		return -1;
 	}
 
@@ -153,12 +187,14 @@ int partida_cargar(s_GameState *gs, const char *ruta)
 	tok = strtok(NULL, ";");
 	if (tok == NULL)
 	{
+		fprintf(stderr, "error: un campo no es tokenizable\n");
 		fclose(f);
 		return -1;
 	}
 	nombre = strdup(tok);           /* reserva + copia */
 	if (nombre == NULL)
 	{
+		fprintf(stderr, "error: un campo (nombre) no es tokenizable \n");
 		fclose(f);
 		return -1;
 	}
@@ -168,19 +204,47 @@ int partida_cargar(s_GameState *gs, const char *ruta)
 	 * atoi convierte "123" -> 123. Si el token no es numero, 
 	 */
 	tok = strtok(NULL, ";");
-	if (tok == NULL) { free(nombre); fclose(f); return -1; }
+	if (tok == NULL)
+	{ 
+		fprintf(stderr, "error: tokenizacion de vida, vidaMax, ataque y defensa ha fallado antes de iniciar \n");
+		fprintf(stderr, "tok no tokenizable");
+		free(nombre); 
+		fclose(f); 
+		return -1; 
+	}
 	pj.vida = atoi(tok);
 
 	tok = strtok(NULL, ";");
-	if (tok == NULL) { free(nombre); fclose(f); return -1; }
+	if (tok == NULL)
+	{ 
+	
+		fprintf(stderr, "error: ascii to int de vida fallo\n");
+		free(nombre);
+		fclose(f);
+		return -1; 
+	}
 	pj.vidaMax = atoi(tok);
 
 	tok = strtok(NULL, ";");
-	if (tok == NULL) { free(nombre); fclose(f); return -1; }
+	if (tok == NULL) 
+	{ 
+		
+		fprintf(stderr, "error: ascii to int de vidaMAX fallo\n");
+		free(nombre); 
+		fclose(f);
+		return -1; 
+	}
 	pj.ataque = atoi(tok);
 
 	tok = strtok(NULL, ";");
-	if (tok == NULL) { free(nombre); fclose(f); return -1; }
+	if (tok == NULL) 
+	{ 
+	
+		fprintf(stderr, "error: ascii to int de ataque fallo\n");
+		free(nombre); 
+		fclose(f);
+		return -1; 
+	}
 	pj.defensa = atoi(tok);
 
 	pj.nombre = nombre;
