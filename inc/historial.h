@@ -150,4 +150,10 @@ int historial_deshacer(historial h);
  * @return 0 ok, -1 si no hay reversión pendiente
  */
 int historial_obtener_reversion(const historial h, s_Reversion *out);
+
+/**
+ * @brief Imprime todo el historial en consola, del mas reciente al mas antiguo.
+ * @param h puntero a historial
+ */
+void historial_imprimir(const historial h);
 #endif

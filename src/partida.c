@@ -85,6 +85,8 @@ static void guardar_historial(FILE *f, const historial h)
 
     if (contador > 0)
     {
+        /* Reservar array temporal de punteros a nodos para escribir
+         * el historial en orden inverso (mas viejo primero en archivo) */
         PosHistorial *nodos = malloc(contador * sizeof(PosHistorial));
         if (nodos)
         {
@@ -233,6 +235,9 @@ static int cargar_personaje(FILE *f, s_Personaje *pj, char **nombre_salida)
         return -1;
     }
 
+    /* strdup reserva memoria en heap para copiar el nombre del personaje.
+     * Esta memoria pasa a ser propiedad de pj->nombre y luego de gs->personaje.nombre.
+     * Se liberara en partida_cargar al cargar una nueva partida o al salir. */
     nombre = strdup(tok);
     if (nombre == NULL)
     {
@@ -325,10 +330,11 @@ static int cargar_inventario(FILE *f, s_GameState *gs, char *nombre_personaje)
     for (i = 0; i < cantidad; i++)
     {
         char nombre_carta[256];
-        s_Carta carta;
+        s_Carta carta = {0};
         char *nom_tok;
         char *tipo_tok;
         char *valor_tok;
+        char *nombre_copia;
 
         if (!leer_linea(f, linea, sizeof(linea)))
         {
@@ -358,16 +364,24 @@ static int cargar_inventario(FILE *f, s_GameState *gs, char *nombre_personaje)
         strncpy(nombre_carta, nom_tok, sizeof(nombre_carta) - 1);
         nombre_carta[sizeof(nombre_carta) - 1] = '\0';
 
-        /* TODO: buscar carta por nombre cuando exista la funcion
-         * carta = carta_buscar_por_nombre(nombre_carta);
-         * if (carta.nombre == NULL) { ... }
-         */
-        if (carta.nombre == NULL)
+        /* strdup reserva memoria en heap para el nombre de la carta.
+         * Esta memoria pasa a ser propiedad del nodo del inventario (carta.nombre).
+         * Se liberara en vaciar_inventario() cuando se vacie o recargue el inventario. */
+        nombre_copia = strdup(nombre_carta);
+        if (nombre_copia == NULL)
         {
-            fprintf(stderr, "aviso: carta desconocida '%s', se omite\n", nombre_carta);
-            continue;
+            fprintf(stderr, "error: sin memoria para copiar nombre de carta\n");
+            free(nombre_personaje);
+            return -1;
         }
 
+        carta.nombre = nombre_copia;
+        carta.tipo = (e_TipoCarta)atoi(tipo_tok);
+        carta.valor = atoi(valor_tok);
+
+        /* agregar_carta() reserva memoria para un nuevo nodo del inventario (s_Inventario).
+         * El nodo contiene una copia superficial de la carta (incluyendo el puntero a nombre_copia).
+         * El nodo se libera en vaciar_inventario() y el nombre. */
         agregar_carta(gs->inventario, carta, gs->inventario);
     }
 
@@ -457,11 +471,15 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
 
     if (gs->Historial == NULL)
     {
+        /* historial_make_empty() reserva memoria para el struct s_historial.
+         * El struct se liberara con historial_destroy() al recargar o salir. */
         gs->Historial = historial_make_empty();
     }
     else
     {
         historial_destroy(gs->Historial);
+        /* historial_make_empty() reserva memoria para el nuevo struct s_historial. */
+        gs->Historial = historial_make_empty();
     }
 
     if (gs->Historial == NULL)
@@ -483,6 +501,8 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
         {
             fprintf(stderr, "error: EOF inesperado leyendo accion %d de %d\n", i + 1, cantidad);
             free(nombre_personaje);
+            historial_destroy(gs->Historial);
+            gs->Historial = NULL;
             return -1;
         }
 
@@ -490,6 +510,8 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
         {
             fprintf(stderr, "error: formato invalido, se esperaba 'ACCION' en linea %d\n", i + 1);
             free(nombre_personaje);
+            historial_destroy(gs->Historial);
+            gs->Historial = NULL;
             return -1;
         }
 
@@ -500,6 +522,8 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
         {
             fprintf(stderr, "error: campos incompletos en accion %d (tipo;descripcion)\n", i + 1);
             free(nombre_personaje);
+            historial_destroy(gs->Historial);
+            gs->Historial = NULL;
             return -1;
         }
 
@@ -516,7 +540,16 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
             continue;
         }
 
-        historial_push(gs->Historial, desc, (TipoAccion)t);
+        /* historial_push() reserva memoria para un nuevo nodo (s_NodoHistorial)
+         * y para copiar la descripcion (strdup). */
+        if (historial_push(gs->Historial, desc, (TipoAccion)t) != 0)
+        {
+            fprintf(stderr, "error: fallo al agregar accion al historial\n");
+            free(nombre_personaje);
+            historial_destroy(gs->Historial);
+            gs->Historial = NULL;
+            return -1;
+        }
     }
 
     return 0;
@@ -543,7 +576,7 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
 int partida_cargar(s_GameState *gs, const char *ruta)
 {
     FILE *f;
-    s_Personaje pj;
+    s_Personaje pj = {0};
     char *nombre_personaje = NULL;
 
     if (gs == NULL)
@@ -589,11 +622,24 @@ int partida_cargar(s_GameState *gs, const char *ruta)
 
     fclose(f);
 
+    /* Liberar nombre anterior del personaje si existe.
+     * Este nombre fue reservado con strdup() en una carga anterior
+     * y pertenece a gs->personaje.nombre. */
+    if (gs->personaje.nombre != NULL)
+    {
+        char *tmp = (char *)gs->personaje.nombre;
+        free(tmp);
+    }
+
     /* Todo salio bien: aplicar al estado real */
     gs->personaje = pj;
     gs->ejecutando = true;
-    gs->Historial->HayReversionPendiente = false;  /* partida cargada: sin undo */
+    if (gs->Historial != NULL)
+    {
+        gs->Historial->HayReversionPendiente = false;  /* partida cargada: sin undo */
+    }
 
-    free(nombre_personaje);
+    /* nombre_personaje NO se libera aqui: ahora es propiedad de gs->personaje.nombre
+     * Se liberara cuando se destruya el personaje o se cargue otra partida */
     return 0;
 }

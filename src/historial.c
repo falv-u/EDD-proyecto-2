@@ -249,3 +249,53 @@ int historial_deshacer(historial h)
 
 	return historial_pop(h);
 }
+
+static const char *tipo_accion_a_string(TipoAccion t)
+{
+	switch (t)
+	{
+		case A_CONSUMIBLE: 
+			return "CONSUMIBLE";
+		case A_REGISTRO:
+			return "REGISTRO";
+		case A_COMBATE_I:
+			 return "COMBATE_INICIO";
+		case A_COM_TURNO:
+			 return "COMBATE_TURNO";
+		case A_FIN_COMBATE:
+			 return "FIN_COMBATE";
+		case A_DESCARTE:
+			 return "DESCARTE";
+		default:
+			 return "DESCONOCIDO";
+	}
+}
+
+void historial_imprimir(const historial h)
+{
+	PosHistorial actual;
+	int i;
+
+	if (h == NULL)
+	{
+		fprintf(stderr, "error: historial NULL\n");
+		return;
+	}
+
+	if (h->nodo == NULL)
+	{
+		printf("Historial vacio\n");
+		return;
+	}
+
+	printf("=== HISTORIAL (%d registros) ===\n", h->CantidadRegistros);
+	actual = h->nodo;
+	i = 1;
+	while (actual != NULL)
+	{
+		printf("%d. [%s] %s\n", i, tipo_accion_a_string(actual->datos.tipo), actual->datos.descripcion);
+		actual = actual->siguiente;
+		i++;
+	}
+	printf("================================\n");
+}
