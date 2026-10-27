@@ -52,7 +52,7 @@ int historial_push(historial h, const char *desc, TipoAccion t )
 	if (desc == NULL)
 	{
 		fprintf(stderr, "error: cadena descripcion NULL\n");
-		fprintf(stderr, "no quisiste poner '\0'???\n");
+		fprintf(stderr, "no quisiste poner ''???\n");
 		return -1;
 	}
 	copia_desc = copiar_cadena(desc);
