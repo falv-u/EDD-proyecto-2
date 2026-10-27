@@ -2,14 +2,18 @@
 #define JUEGO_H
 
 #include "carta.h"
-#include "historial.h"
+#include "cola.h"
 #include "combate.h"
-#include "iniciar_juego.h"
-#include "inventario.h"
-#include "personaje.h"
 #include "comunes.h"
+#include "enemigo.h"
 #include "eventos.h"
 #include "exploracion.h"
+#include "historial.h"
+#include "iniciar_juego.h"
+#include "inventario.h"
+#include "partida.h"
+#include "personaje.h"
+
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
