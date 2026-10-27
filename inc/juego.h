@@ -2,6 +2,7 @@
 #define JUEGO_H
 
 #include "carta.h"
+#include "historial.h"
 #include "combate.h"
 #include "iniciar_juego.h"
 #include "inventario.h"
@@ -19,6 +20,7 @@ typedef struct s_GameState
     s_Personaje personaje;
     Lista inventario;
     bool ejecutando;
+    historial Historial;
 } s_GameState;
 
 #endif
