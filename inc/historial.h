@@ -118,6 +118,12 @@ int historial_is_empty(const historial h);
 void historial_destroy(historial h);
 
 /**
+ * @brief Libera completamente el historial: nodos, descripciones y el struct.
+ * @param h  puntero a historial (se pone a NULL tras liberar).
+ */
+void historial_free(historial *h);
+
+/**
  * @brief Registra una accion en el historial (push) y, si la acción es
  *        reversible (A_DESCARTE), guarda la 'foto' para poder deshacerla.
  *        La foto de la acción anterior, si existía, se descarta (ventana de 1).

@@ -157,7 +157,7 @@ void historial_destroy(historial h)
 	{
 		fprintf(stderr, "error: historia ya NULL\n");
 		return;
-	} 
+	}
 	actual = h->nodo;
 	while (actual != NULL)
 	{
@@ -169,6 +169,17 @@ void historial_destroy(historial h)
 	h->HayReversionPendiente = false;
 	h->nodo = NULL;
 	h->CantidadRegistros = 0;
+}
+
+void historial_free(historial *h)
+{
+	if (h == NULL || *h == NULL)
+	{
+		return;
+	}
+	historial_destroy(*h);
+	free(*h);
+	*h = NULL;
 }
 int historial_registrar(historial h, const char *desc, TipoAccion t, const s_Reversion *rev)
 {
