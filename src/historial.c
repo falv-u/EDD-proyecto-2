@@ -61,7 +61,8 @@ int historial_push(historial h, const char *desc, TipoAccion t )
 		return -1;
 
 	nuevo = malloc(sizeof(struct s_NodoHistorial));
-	if (nuevo == NULL) {
+	if (nuevo == NULL)
+	{
 		fprintf(stderr, "error: sin memoria para nodo\n");
 		free(copia_desc);
 		return -1;
@@ -186,6 +187,7 @@ int historial_registrar(historial h, const char *desc, TipoAccion t, const s_Rev
 
 	if (historial_push(h, desc, t) != 0)
 	{
+		fprintf(stderr, "push fallo");
 		return -1;
 	}
 
