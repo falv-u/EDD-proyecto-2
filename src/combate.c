@@ -110,10 +110,23 @@ void atacar_enemigo(const s_GameState *gs, s_Enemigo *enemigo)
  */
 static int obtener_posicion_inventario(Lista I, Posicion P)
 {
-    if (I == NULL || P == NULL || P == I)
-        return -1;
-
     int pos = 0;
+    if (I == NULL )
+    {
+	fprintf(stderr, "error: lista NULL\n");
+        return -1;
+    }
+    if ( P == NULL )
+    {
+	fprintf(stderr, "error: Posicion NULL \n");
+        return -1;
+    }
+    if ( P == I)
+    {
+	fprintf(stderr, "error: lista y posicion son iguales\n");
+        return -1;
+    }
+
     Posicion aux = I->next;
 
     while (aux != NULL && aux != P)
@@ -158,8 +171,18 @@ static void turno_enemigo(s_GameState *gs, s_Enemigo *enemigo)
     bool critico;
     int danho;
 
-    if (gs == NULL || enemigo == NULL)
+    if (gs == NULL)
+    {
+	fprintf(stderr, "error: el estado de juego es nulo\n");
         return;
+    }
+
+    if(enemigo == NULL)
+    {
+	fprintf(stderr, "error: enemigo NULL\n");
+        return;
+    }
+
 
     danho = calcular_danho(enemigo->ataque, gs->personaje.defensa, &critico);
 
@@ -188,7 +211,7 @@ static void usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
     Posicion pos = NULL;
     int idx;
 
-    (void)enemigo_actual;
+    enemigo_actual;
 
     if (gs == NULL || gs->inventario == NULL)
         return;
