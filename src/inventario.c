@@ -51,8 +51,8 @@ void inventario(s_GameState *gs)
             case 3:
                 puntCarta = seleccionar_carta(gs->inventario);
 
-                if(puntCarta != NULL)
-                    usar_carta(gs, puntCarta);
+                if(puntCarta != NULL && confirmar_uso_carta(puntCarta))
+                    usar_carta_en_combate(gs, NULL);
 
                 break;
 
@@ -284,54 +284,6 @@ void descartar_carta(s_GameState *gs, Posicion puntCarta)
     printf("\nHas descartado %s\n", puntCarta->carta.nombre);
 
     eliminar_carta(gs->inventario, puntCarta);
-}
-
-bool usar_carta(s_GameState *gs, Posicion puntCarta)
-{
-    if(gs == NULL || puntCarta == NULL)
-        return false;
-
-    s_Carta carta = puntCarta->carta;
-    s_Personaje *pj = &gs->personaje;
-
-    switch(carta.tipo)
-    {
-        case ATAQUE:
-            pj->ataque += carta.valor;
-            printf("\n+%d Ataque\n", carta.valor);
-            break;
-
-        case DEFENSA:
-            pj->defensa += carta.valor;
-            printf("\n+%d Defensa\n", carta.valor);
-            break;
-
-        case CURACION:
-            pj->vida += carta.valor;
-
-            if(pj->vida > pj->vidaMax)
-                pj->vida = pj->vidaMax;
-
-            printf("\nVida actual: %d/%d\n", pj->vida, pj->vidaMax);
-            break;
-
-        case VIDAMAXIMA:
-            pj->vidaMax += carta.valor;
-            pj->vida = pj->vidaMax;
-
-            printf("\nVida maxima aumentada a %d\n", pj->vidaMax);
-            break;
-
-        case ESPECIAL:
-            // falta agregar
-            return false;
-    }
-
-    printf("\nSe ha utilizado %s\n", carta.nombre);
-
-    eliminar_carta(gs->inventario, puntCarta);
-
-    return true;
 }
 
 bool confirmar_uso_carta(Posicion puntCarta)

@@ -206,18 +206,18 @@ static void turno_enemigo(s_GameState *gs, s_Enemigo *enemigo)
  * @param gs             Puntero al estado del juego.
  * @param enemigo_actual Puntero al enemigo actual (no usado directamente, se pasa por consistencia).
  */
-static void usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
+bool usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
 {
     Posicion pos = NULL;
     int idx;
 
     if (gs == NULL || gs->inventario == NULL)
-        return;
+        return false;
 
     if (gs->inventario->next == NULL)
     {
         printf("\nEl inventario esta vacio.\n");
-        return;
+        return false; 
     }
 
     imprimir_cartas(gs->inventario);
@@ -228,12 +228,12 @@ static void usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
     if (pos == NULL)
     {
         printf("Carta no encontrada.\n");
-        return;
+        return false;
     }
     if(!confirmar_uso_carta(pos))
     {
         printf("\nUso de carta cancelado\n");
-        return;
+        return false;
     }
 
     s_Carta *carta = &pos->carta;
@@ -241,11 +241,25 @@ static void usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
     switch (carta->tipo)
     {
         case CURACION:
-            gs->personaje.vida += carta->valor;
-            if (gs->personaje.vida > gs->personaje.vidaMax)
+            if(carta->valor == 0)
+            {
                 gs->personaje.vida = gs->personaje.vidaMax;
-            printf("\nUsas %s y recuperas %d de vida. Vida actual: %d/%d\n",
-                   carta->nombre, carta->valor, gs->personaje.vida, gs->personaje.vidaMax);
+                printf("\nUsas %s y recuperas toda tu vida.\n", carta->nombre);
+            }
+            else
+            {
+                gs->personaje.vida += carta->valor;
+
+                if(gs->personaje.vida > gs->personaje.vidaMax)
+                    gs->personaje.vida = gs->personaje.vidaMax;
+
+                printf("\nUsas %s y recuperas %d puntos de vida.\n",
+                    carta->nombre, carta->valor);
+            }
+
+            printf("Vida actual: %d/%d\n",
+                gs->personaje.vida, gs->personaje.vidaMax);
+
             registrar_descarte_combate(gs, pos);
             eliminar_carta(gs->inventario, pos);
             break;
@@ -272,16 +286,9 @@ static void usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
                    carta->nombre, carta->valor, gs->personaje.defensa);
             eliminar_carta(gs->inventario, pos);
             break;
-
-        case ESPECIAL:
-            printf("\n%s es una carta especial. Efecto: ", carta->nombre);
-            if (carta->valor == 0)
-            {
-                printf("Efecto especial activado (pendiente de implementar).\n");
-            }
-            eliminar_carta(gs->inventario, pos);
-            break;
     }
+
+    return true;
 }
 
 /**
@@ -362,11 +369,12 @@ void combate(s_GameState *gs)
                 break;
 
             case 3:
-                usar_carta_en_combate(gs, enemigo_actual);
-                if (!cola_esta_vacia(grupo) && enemigo_actual->vida > 0)
+                if(usar_carta_en_combate(gs, enemigo_actual) &&
+                !cola_esta_vacia(grupo) && enemigo_actual->vida > 0)
                 {
                     turno_enemigo(gs, enemigo_actual);
-                    if (gs->personaje.vida <= 0)
+
+                    if(gs->personaje.vida <= 0)
                     {
                         gs->personaje.vida = 0;
                         personaje_muerto = true;

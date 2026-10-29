@@ -9,9 +9,9 @@ s_Carta carta_aleatoria()
         {"Martillo Eterno", ATAQUE, 7},
         {"Collar del Paladin", DEFENSA, 2},
         {"Armadura del Sacrificio", DEFENSA, 5},
-        {"Balanza Dorada", ESPECIAL, 0},
+        {"Armadura Dorada", DEFENSA, 3},
         {"Restaurador Vital", CURACION, 30},
-        {"Genio Caprichoso", ESPECIAL, 0},
+        {"Genio Curativo", CURACION, 20},
         {"Pocion Rejuvenecedora", VIDAMAXIMA, 10},
         {"Esteroides", VIDAMAXIMA, 20}
    };
