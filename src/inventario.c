@@ -163,10 +163,10 @@ Posicion encontrar_carta(Lista I, int posicion)
     return aux;
 }
 
-void imprimir_cartas(Lista L) 
+void imprimir_cartas(Lista I) 
 {
     int cant = 0;
-    Posicion aux = L->next;
+    Posicion aux = I->next;
 
     printf("\n");
     while(aux != NULL)
@@ -181,16 +181,16 @@ void imprimir_cartas(Lista L)
     printf("\n");
 }
 
-int cantidad_cartas(Lista L)
+int cantidad_cartas(Lista I)
 {
-    if(L == NULL)
+    if(I == NULL)
     {
         printf("\nLa lista esta vacia\n");
         return 0;
     }
 
     int cantidad = 0;
-    Posicion aux = L->next;
+    Posicion aux = I->next;
 
     while(aux != NULL)
     {

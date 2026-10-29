@@ -28,11 +28,6 @@ void validar_rango(int *num, int min, int max)
     }  
 }
 
-void imprimir_ingresar_opcion()
-{
-    printf("\nIngresa una opcion: ");
-}
-
 int leer_entero_en_rango(int min, int max)
 {
     int var = leer_entero();
