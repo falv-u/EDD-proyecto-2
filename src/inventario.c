@@ -17,7 +17,7 @@ void inventario(s_GameState *gs)
                "4. Descartar carta\n"
                "5. Volver\n");
 
-        imprimir_ingresar_opcion();
+        printf("\nIngrese una opcion: ");
         opcion = leer_entero_en_rango(1, 5);
 
         switch(opcion)

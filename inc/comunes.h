@@ -34,8 +34,8 @@ void validar_rango(int *num, int min, int max);
 /**
  * @brief Solicita una respuesta de sí o no y devuelve su valor.
  * 
- * @return true 
- * @return false 
+ * @return true Si responde si
+ * @return false Si responde no
  */
 bool leer_si_no(void);
 #endif

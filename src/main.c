@@ -44,7 +44,7 @@ static void mostrar_menu(const s_GameState *gs)
     printf("\n===== GREED ISLAND =====\n");
     printf("Jugador: %s\n", gs->personaje.nombre);
     printf("1. Ver personaje\n2. Explorar Antokiba\n3. Ver inventario\n4. Salir\n");
-    imprimir_ingresar_opcion();
+    printf("\nIngrese una opcion: ");
 }
 
 int main(void)

@@ -75,7 +75,7 @@ void mostrar_estado(const s_GameState *gs, const s_Enemigo *enemigo, int enEsper
     printf("Enemigo actual: %s (%d/%d PV)\n", enemigo->nombre, enemigo->vida, enemigo->vidaMax);
     printf("Enemigos en espera: %d\n", enEspera);
     printf("\n1. Atacar\n2. Ver inventario\n3. Usar carta");
-    imprimir_ingresar_opcion();
+    printf("\nIngrese una opcion: ");
 }
 
 /**
