@@ -25,7 +25,6 @@ void eliminar_carta(Lista I, Posicion P);
 void imprimir_cartas(Lista L);
 void descartar_carta(s_GameState *gs, Posicion puntCarta);
 int cantidad_cartas(Lista L);
-bool usar_carta(s_GameState *gs, Posicion puntCarta);
 bool confirmar_uso_carta(Posicion puntCarta);
 Posicion encontrar_carta(Lista I, int posicion);
 Posicion buscar_carta_nombre(Lista I, const char *nombre);

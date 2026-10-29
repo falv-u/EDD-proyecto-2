@@ -66,7 +66,7 @@ int ejecutar_evento(s_GameState *gs, e_TipoEvento evento)
             printf("evento combate \n");
             return 1;
         case LOOTEO:
-            // evento_looteo(gs)
+            evento_looteo(gs);
             printf("evento loot\n");
             return 1;
         case DESGRACIA:

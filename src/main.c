@@ -53,7 +53,17 @@ int main(void)
     s_GameState gs = {0};
 
     gs.inventario = crear_inventario(NULL);
-    iniciar_juego(&gs);
+    gs.Historial = historial_make_empty();
+    gs.ejecutando = true;
+
+    asignar_personaje(&gs.personaje);
+    imprimir_personaje(&gs.personaje);
+
+    for(int i = 0; i < 3; i++)
+    {
+        agregar_carta(gs.inventario, carta_aleatoria(), gs.inventario);
+    }
+
     imprimir_cartas(gs.inventario);
 
     while(gs.ejecutando)

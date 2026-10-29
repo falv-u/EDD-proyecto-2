@@ -57,8 +57,8 @@ void cola_vaciar(Cola c)
         return;
  
     c->tamanho = 0;
-    c->frente = 1;
-    c->final = 0; 
+    c->frente = 0;
+    c->final = c->capacidad - 1;
 }
  
 bool cola_esta_vacia(const Cola c)

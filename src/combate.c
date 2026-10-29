@@ -260,7 +260,6 @@ bool usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
             printf("Vida actual: %d/%d\n",
                 gs->personaje.vida, gs->personaje.vidaMax);
 
-            registrar_descarte_combate(gs, pos);
             eliminar_carta(gs->inventario, pos);
             break;
 
@@ -269,7 +268,6 @@ bool usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
             gs->personaje.vida = gs->personaje.vidaMax;
             printf("\nUsas %s y aumentas tu vida maxima en %d. Vida maxima: %d\n",
                    carta->nombre, carta->valor, gs->personaje.vidaMax);
-            registrar_descarte_combate(gs, pos);
             eliminar_carta(gs->inventario, pos);
             break;
 
@@ -286,7 +284,14 @@ bool usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
                    carta->nombre, carta->valor, gs->personaje.defensa);
             eliminar_carta(gs->inventario, pos);
             break;
+
+        default:
+            printf("\nCarta no disponible\n");
+            break;
     }
+
+    if(gs->Historial != NULL)
+        historial_registrar(gs->Historial, "Carta utilizada", A_CONSUMIBLE, NULL);
 
     return true;
 }

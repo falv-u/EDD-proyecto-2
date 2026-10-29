@@ -11,7 +11,18 @@ void crear_personaje(s_Personaje *pj, int vida, int vidaMax, int ataque, int def
     pj->vidaMax = vidaMax;
     pj->ataque = ataque;
     pj->defensa = defensa;
-    pj->nombre = nombre;
+
+    char *copiaNombre = malloc(strlen(nombre) + 1);
+
+    if(copiaNombre == NULL)
+    {
+        printf("\nError al reservar memoria para el nombre\n");
+        pj->nombre = NULL;
+        return;
+    }
+
+    strcpy(copiaNombre, nombre);
+    pj->nombre = copiaNombre;
 }
 
 void asignar_personaje(s_Personaje *pj)

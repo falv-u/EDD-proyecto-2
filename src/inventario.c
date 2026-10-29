@@ -49,11 +49,7 @@ void inventario(s_GameState *gs)
             }
 
             case 3:
-                puntCarta = seleccionar_carta(gs->inventario);
-
-                if(puntCarta != NULL && confirmar_uso_carta(puntCarta))
-                    usar_carta_en_combate(gs, NULL);
-
+                usar_carta_en_combate(gs, NULL);
                 break;
 
             case 4:

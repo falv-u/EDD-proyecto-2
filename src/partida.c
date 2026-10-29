@@ -608,14 +608,12 @@ int partida_cargar(s_GameState *gs, const char *ruta)
 
     if (cargar_inventario(f, gs, nombre_personaje) != 0)
     {
-        free(nombre_personaje);
         fclose(f);
         return -1;
     }
 
     if (cargar_historial(f, gs, nombre_personaje) != 0)
     {
-        free(nombre_personaje);
         fclose(f);
         return -1;
     }

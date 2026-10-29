@@ -9,7 +9,6 @@
 #include "eventos.h"
 #include "exploracion.h"
 #include "historial.h"
-#include "iniciar_juego.h"
 #include "inventario.h"
 #include "partida.h"
 #include "personaje.h"

@@ -31,8 +31,8 @@ Tanto el jugador como los enemigos tendran:
 - **Martillo eterno** +7 Ataque
 - **Collar del paladin** +2 Defensa
 - **Armadura del sacrificio** +5 Defensa
-- **Balanza dorada** Evitar enfrentamiento y curar +20 Vida
+- **Armadura dorada** +3 Defensa
 - **Restaurador Vital** Recupera 15 puntos de vida
-- **Genio caprichoso** Genera una nueva carta aleatoria
+- **Genio curativo** Recupera 20 puntos de vida
 - **Pocion rejuvenecedoras** +10 Vida maxima
 - **Esteroides** +20 Vida maxima
