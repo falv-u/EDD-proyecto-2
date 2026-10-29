@@ -70,7 +70,7 @@ int main(void)
                 exploracion(&gs, 0); 
                 break;
             case 3: 
-                imprimir_cartas(gs.inventario); 
+                inventario(&gs); 
                     break;
             case 4:
                 gs.ejecutando = false;
