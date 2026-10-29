@@ -62,7 +62,7 @@ int ejecutar_evento(s_GameState *gs, e_TipoEvento evento)
     switch(evento)
     {
         case COMBATE:
-            // evento_combate(gs);
+            combate(gs);
             printf("evento combate \n");
             return 1;
         case LOOTEO:

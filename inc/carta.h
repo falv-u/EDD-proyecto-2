@@ -21,4 +21,5 @@ typedef struct
 
 s_Carta carta_aleatoria();
 void imprimir_carta_sola(s_Carta carta);
+void mostrar_descripcion_carta(s_Carta carta);
 #endif

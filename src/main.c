@@ -50,7 +50,6 @@ static void mostrar_menu(const s_GameState *gs)
 int main(void)
 {
     srand(time(NULL));
-    int pasos = 0;
     s_GameState gs = {0};
 
     gs.inventario = crear_inventario(NULL);

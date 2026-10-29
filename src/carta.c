@@ -17,7 +17,6 @@ s_Carta carta_aleatoria()
    };
 
    int porcentaje = rand()%100;
-   int pos = -1;
    s_Carta carta;
 
    if(porcentaje <  5) carta = cartas_disp[0];
@@ -38,5 +37,42 @@ void imprimir_carta_sola(s_Carta carta)
 {
     static const char *tipos[] = {"ataque", "curacion", "defensa", "vida maxima", "especial"};
 
-    printf(" [%s] tipo: %s, valor: %d\n", carta.nombre, tipos[carta.tipo], carta.valor);
+    printf("[%s] tipo: %s, valor: %d\n", carta.nombre, tipos[carta.tipo], carta.valor);
+}
+
+void mostrar_descripcion_carta(s_Carta carta)
+{
+    printf("\n========== CARTA ==========\n");
+    printf("Nombre: %s\n", carta.nombre);
+
+    switch(carta.tipo)
+    {
+        case ATAQUE:
+            printf("Efecto: Aumenta el ataque en %d puntos\n", carta.valor);
+            break;
+
+        case DEFENSA:
+            printf("Efecto: Aumenta la defensa en %d puntos\n", carta.valor);
+            break;
+
+        case CURACION:
+            if(carta.valor == 0)
+                printf("Efecto: Recupera toda la vida\n");
+            else
+                printf("Efecto: Recupera %d puntos de vida\n", carta.valor);
+            break;
+
+        case VIDAMAXIMA:
+            printf("Efecto: Aumenta la vida maxima en %d puntos\n", carta.valor);
+            break;
+
+        case ESPECIAL:
+            if(strcmp(carta.nombre, "Balanza Dorada") == 0)
+                printf("Efecto: Permite evitar un combate\n");
+            else if(strcmp(carta.nombre, "Genio Caprichoso") == 0)
+                printf("Efecto: Activa un efecto aleatorio\n");
+            break;
+    }
+
+    printf("===========================\n");
 }

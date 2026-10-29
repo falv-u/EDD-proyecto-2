@@ -20,7 +20,7 @@ int calcular_danho(int ataque, int defensa, bool *critico)
     if (danho < 1)
         danho = 1;
 
-    *critico = (rand() % 10) < PROB_CRITICOS;
+    *critico = (rand() % 100) < PROB_CRITICOS;
     if (*critico)
         danho *= 2;
 
@@ -211,8 +211,6 @@ static void usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
     Posicion pos = NULL;
     int idx;
 
-    enemigo_actual;
-
     if (gs == NULL || gs->inventario == NULL)
         return;
 
@@ -223,13 +221,18 @@ static void usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
     }
 
     imprimir_cartas(gs->inventario);
-    printf("\nIngrese el numero de la carta a usar (empezando desde 0): ");
-    idx = leer_entero();
+    printf("\nIngrese el numero de la carta a usar: ");
+    idx = leer_entero_en_rango(1, cantidad_cartas(gs->inventario));
 
-    pos = encontrar_carta(gs->inventario, idx + 1);
+    pos = encontrar_carta(gs->inventario, idx);
     if (pos == NULL)
     {
         printf("Carta no encontrada.\n");
+        return;
+    }
+    if(!confirmar_uso_carta(pos))
+    {
+        printf("\nUso de carta cancelado\n");
         return;
     }
 
@@ -260,12 +263,14 @@ static void usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
             gs->personaje.ataque += carta->valor;
             printf("\nEquipas %s y aumentas tu ataque en %d. Ataque actual: %d\n",
                    carta->nombre, carta->valor, gs->personaje.ataque);
+            eliminar_carta(gs->inventario, pos);
             break;
 
         case DEFENSA:
             gs->personaje.defensa += carta->valor;
             printf("\nEquipas %s y aumentas tu defensa en %d. Defensa actual: %d\n",
                    carta->nombre, carta->valor, gs->personaje.defensa);
+            eliminar_carta(gs->inventario, pos);
             break;
 
         case ESPECIAL:
@@ -274,6 +279,7 @@ static void usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
             {
                 printf("Efecto especial activado (pendiente de implementar).\n");
             }
+            eliminar_carta(gs->inventario, pos);
             break;
     }
 }

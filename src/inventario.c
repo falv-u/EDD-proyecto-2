@@ -289,7 +289,7 @@ void descartar_carta(s_GameState *gs, Posicion puntCarta)
 bool usar_carta(s_GameState *gs, Posicion puntCarta)
 {
     if(gs == NULL || puntCarta == NULL)
-        return;
+        return false;
 
     s_Carta carta = puntCarta->carta;
     s_Personaje *pj = &gs->personaje;
@@ -324,10 +324,23 @@ bool usar_carta(s_GameState *gs, Posicion puntCarta)
 
         case ESPECIAL:
             // falta agregar
-            return;
+            return false;
     }
 
     printf("\nSe ha utilizado %s\n", carta.nombre);
 
     eliminar_carta(gs->inventario, puntCarta);
+
+    return true;
+}
+
+bool confirmar_uso_carta(Posicion puntCarta)
+{
+    if(puntCarta == NULL)
+        return false;
+
+    mostrar_descripcion_carta(puntCarta->carta);
+
+    printf("\nEstas seguro de utilizar esta carta? ");
+    return leer_si_no();
 }
