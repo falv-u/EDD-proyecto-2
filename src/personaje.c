@@ -11,7 +11,7 @@ void crear_personaje(s_Personaje *pj, int vida, int vidaMax, int ataque, int def
 
     if(copiaNombre == NULL)
     {
-        printf("\nError al reservar memoria para el nombre\n");
+        ui_mensaje_error("No se pudo reservar memoria para el nombre");
         pj->nombre = NULL;
         return;
     }
@@ -24,10 +24,12 @@ void asignar_personaje(s_Personaje *pj)
 {
     int opcion = -1;
 
-    printf("\nSeleccione un personaje\n");
-    printf("\n1. Gon\n\nVida maxima: 110\nAtaque: 12\nDefensa: 6\n");
-    printf("\n2. Killua\n\nVida maxima: 90\nAtaque: 15\nDefensa: 4\n");
-    printf("\nIngrese una opcion: ");
+    ui_limpiar_pantalla();
+    ui_titulo("ELIGE A TU PERSONAJE", COLOR_AMARILLO);
+
+    printf("\n%s1. Gon%s\n   Vida maxima: 110 | Ataque: 12 | Defensa: 6\n", COLOR_VERDE, COLOR_RESET);
+    printf("\n%s2. Killua%s\n   Vida maxima: 90 | Ataque: 15 | Defensa: 4\n", COLOR_CIAN, COLOR_RESET);
+    imprimir_ingresar_opcion();
     opcion = leer_entero_en_rango(1, 2);
 
     switch(opcion)
@@ -39,12 +41,24 @@ void asignar_personaje(s_Personaje *pj)
             crear_personaje(pj, 90, 90, 15, 4, "Killua");
             break;
         default:
-            printf("\nError: opcion invalida\n");
+            ui_mensaje_error("Opcion invalida");
             break;
+    }
+
+    if(pj->nombre != NULL)
+    {
+        printf("\n");
+        ui_mensaje_exito("Has elegido a %s!", pj->nombre);
+        ui_pausa_ms(PAUSA_MEDIA);
     }
 }
 
 void imprimir_personaje(s_Personaje *pj)
 {
-    printf("\n<<%s>>\n\nVida maxima: %d\nVida actual: %d\nAtaque: %d\nDefensa: %d\n", pj->nombre, pj->vidaMax, pj->vida, pj->ataque, pj->defensa);
+    ui_titulo(pj->nombre != NULL ? pj->nombre : "???", COLOR_VERDE);
+    printf("Vida     ");
+    ui_barra_vida(pj->vida, pj->vidaMax, ANCHO_BARRA);
+    printf("\nAtaque   %s%d%s\n", COLOR_ROJO, pj->ataque, COLOR_RESET);
+    printf("Defensa  %s%d%s\n", COLOR_AZUL, pj->defensa, COLOR_RESET);
+    ui_linea('-', COLOR_VERDE);
 }

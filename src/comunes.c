@@ -12,7 +12,9 @@ int leer_entero()
             exit(1);
 
         while ((c = getchar()) != '\n' && c != EOF); // Limpia el buffer
-        printf("\033[1;31m\nERROR:\033[0m \033[31mDebe ingresar un numero entero\033[0m\n\nIntente nuevamente: ");
+        printf("\n");
+        ui_mensaje_error("Debe ingresar un numero entero");
+        printf("\nIntente nuevamente: ");;
     }
 
     while ((c = getchar()) != '\n' && c != EOF); // Limpia el buffer
@@ -24,7 +26,7 @@ void validar_rango(int *num, int min, int max)
 {
     while(*num > max || *num < min)
     {
-        printf("Ingrese un numero entre %d y %d: ", min, max);
+        printf("%sIngrese un numero entre %d y %d:%s ", COLOR_AMARILLO, min, max, COLOR_RESET);
         *num = leer_entero();
     }  
 }
@@ -44,7 +46,7 @@ bool leer_si_no()
 
     while(1)
     {
-        printf("(s/n) > ");
+        printf("%s(s/n)%s > ", COLOR_AMARILLO, COLOR_RESET);
         c = getchar();
 
         if(c == EOF)
@@ -58,7 +60,7 @@ bool leer_si_no()
         if(c == 'n' || c == 'N')
             return false;
 
-        printf("\033[1;31mERROR:\033[0m Responde con 's' o 'n'\n");
+        ui_mensaje_error("Responde con 's' o 'n'");
     }
 }
 
