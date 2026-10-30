@@ -12,6 +12,7 @@
 #include "inventario.h"
 #include "partida.h"
 #include "personaje.h"
+#include "ui.h"
 
 #include <stdlib.h>
 #include <time.h>
