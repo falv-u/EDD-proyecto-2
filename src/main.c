@@ -59,8 +59,9 @@ void mostrar_menu(const s_GameState *gs)
     ui_opcion_menu(1, "Ver personaje");
     ui_opcion_menu(2, "Explorar Antokiba");
     ui_opcion_menu(3, "Ver inventario");
-    ui_opcion_menu(4, "Guardar partida");
-    ui_opcion_menu(5, "Salir");
+    ui_opcion_menu(4, "Ver historial");
+    ui_opcion_menu(5, "Guardar partida");
+    ui_opcion_menu(6, "Salir");
     imprimir_ingresar_opcion();
 }
 
@@ -203,7 +204,7 @@ void guardar_partida(const s_GameState *gs)
  * @brief Ejecuta la opcion elegida en el menu principal.
  *
  * @param gs     Estado del juego (no NULL).
- * @param opcion Opcion elegida (1 a 5).
+ * @param opcion Opcion elegida (1 a 6).
  */
 void ejecutar_opcion_menu(s_GameState *gs, int opcion)
 {
@@ -222,9 +223,14 @@ void ejecutar_opcion_menu(s_GameState *gs, int opcion)
             break;
         case 4:
             ui_limpiar_pantalla();
-            guardar_partida(gs);
+            historial_imprimir(gs->Historial);
+            ui_esperar_enter();
             break;
         case 5:
+            ui_limpiar_pantalla();
+            guardar_partida(gs);
+            break;
+        case 6:
             printf("\n");
             ui_mensaje_info("Gracias por jugar. Hasta pronto!");
             ui_pausa_ms(PAUSA_MEDIA);
@@ -264,7 +270,7 @@ int main(void)
     while (gs.ejecutando)
     {
         mostrar_menu(&gs);
-        ejecutar_opcion_menu(&gs, leer_entero_en_rango(1, 5));
+        ejecutar_opcion_menu(&gs, leer_entero_en_rango(1, 6));
     }
  
     /* Liberar toda la memoria antes de salir */

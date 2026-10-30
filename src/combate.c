@@ -237,6 +237,12 @@ bool usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
     }
 
     s_Carta *carta = &pos->carta;
+    char descripcion[128];
+
+    /* El texto se arma antes de usar la carta: al eliminarla del inventario
+     * el nodo (y su nombre) se liberan. */
+    snprintf(descripcion, sizeof(descripcion), "El personaje usó %s",
+             carta->nombre ? carta->nombre : "una carta");
 
     switch (carta->tipo)
     {
@@ -291,7 +297,7 @@ bool usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
     }
 
     if(gs->Historial != NULL)
-        historial_registrar(gs->Historial, "Carta utilizada", A_CONSUMIBLE, NULL);
+        historial_registrar(gs->Historial, descripcion, A_CONSUMIBLE, NULL);
 
     return true;
 }
@@ -323,6 +329,8 @@ void combate(s_GameState *gs)
         return;
     }
 
+    historial_registrar(gs->Historial, "Inicio de combate", A_COMBATE_I, NULL);
+
     while (!fin_combate && gs->ejecutando)
     {
         if (cola_esta_vacia(grupo))
@@ -352,6 +360,10 @@ void combate(s_GameState *gs)
                 if (enemigo_actual->vida <= 0)
                 {
                     printf("\n!Has derrotado a %s!\n", enemigo_actual->nombre);
+                    char descripcion[128];
+                    snprintf(descripcion, sizeof(descripcion), "Se derrotó al enemigo %s",
+                             enemigo_actual->nombre ? enemigo_actual->nombre : "desconocido");
+                    historial_registrar(gs->Historial, descripcion, A_REGISTRO, NULL);
                     if (cola_desencolar(grupo) != 0)
                     {
                         fprintf(stderr, "error: fallo al desencolar enemigo muerto\n");
@@ -392,6 +404,8 @@ void combate(s_GameState *gs)
 
     cola_destruir(grupo);
     grupo = NULL;
+
+    historial_registrar(gs->Historial, "Fin de combate", A_FIN_COMBATE, NULL);
 
     if (personaje_muerto)
     {

@@ -20,9 +20,13 @@ int definir_evento()
 void evento_looteo(s_GameState *gs)
 {
     s_Carta carta = carta_aleatoria();
+    char descripcion[128];
 
     printf("\n");
     ui_mensaje_aviso("!Encuentras una carta en el suelo!");
+    snprintf(descripcion, sizeof(descripcion), "Se encontró %s",
+             carta.nombre ? carta.nombre : "una carta");
+    historial_registrar(gs->Historial, descripcion, A_REGISTRO, NULL);
     ui_pausa_ms(PAUSA_MEDIA);
     printf("  ");
     imprimir_carta_sola(carta);
@@ -32,10 +36,16 @@ void evento_looteo(s_GameState *gs)
     {
         agregar_carta(gs->inventario, carta, gs->inventario);
         ui_mensaje_exito("%s agregada al inventario.", carta.nombre);
+        snprintf(descripcion, sizeof(descripcion), "Se recogió %s",
+                 carta.nombre ? carta.nombre : "una carta");
+        historial_registrar(gs->Historial, descripcion, A_REGISTRO, NULL);
     }
     else
     {
         ui_mensaje_info("Dejas la carta donde estaba.");
+        snprintf(descripcion, sizeof(descripcion), "Se dejó %s",
+                 carta.nombre ? carta.nombre : "una carta");
+        historial_registrar(gs->Historial, descripcion, A_REGISTRO, NULL);
     }
     ui_pausa_ms(PAUSA_MEDIA);
 }
