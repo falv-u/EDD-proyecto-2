@@ -2,9 +2,23 @@
 
 #define PASOS_POR_EVENTO 3
 #define CANTIDAD_FRASES 4
-#define CANTIDAD_ZONAS 3
 
 static const char *nombresZona[CANTIDAD_ZONAS] = {"Antokiba", "Masadora", "Soufrabi"};
+
+/**
+ * @brief Devuelve el nombre de la zona indicada.
+ * @param zona Indice de la zona (0 a CANTIDAD_ZONAS - 1).
+ * @return Nombre de la zona o "Desconocida" si es invalida.
+ */
+const char *nombre_zona(int zona)
+{
+    if (zona < 0 || zona >= CANTIDAD_ZONAS)
+    {
+        return "Desconocida";
+    }
+
+    return nombresZona[zona];
+}
 
 static const char *frasesCaminata[CANTIDAD_FRASES] =
 {

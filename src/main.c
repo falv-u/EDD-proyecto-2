@@ -5,6 +5,7 @@
 void liberar_memoria(s_GameState *gs);
 void mostrar_menu(const s_GameState *gs);
 void mostrar_menu_inicio(void);
+void mostrar_menu_zonas(void);
 bool inicializar_juego(s_GameState *gs);
 bool cargar_partida(s_GameState *gs);
 void guardar_partida(const s_GameState *gs);
@@ -57,7 +58,7 @@ void mostrar_menu(const s_GameState *gs)
     ui_barra_vida(gs->personaje.vida, gs->personaje.vidaMax, ANCHO_BARRA);
     printf("\n\n");
     ui_opcion_menu(1, "Ver personaje");
-    ui_opcion_menu(2, "Explorar Antokiba");
+    ui_opcion_menu(2, "Explorar zona");
     ui_opcion_menu(3, "Ver inventario");
     ui_opcion_menu(4, "Ver historial");
     ui_opcion_menu(5, "Guardar partida");
@@ -78,6 +79,26 @@ void mostrar_menu_inicio(void)
     imprimir_ingresar_opcion();
 }
  
+/**
+ * @brief Muestra el menu de seleccion de zona a explorar.
+ */
+void mostrar_menu_zonas(void)
+{
+    int i;
+
+    ui_limpiar_pantalla();
+    ui_titulo("ZONAS DISPONIBLES", COLOR_CIAN);
+    printf("\n");
+
+    for (i = 0; i < CANTIDAD_ZONAS; i++)
+    {
+        ui_opcion_menu(i + 1, nombre_zona(i));
+    }
+
+    printf("\n");
+    imprimir_ingresar_opcion();
+}
+
 /**
  * @brief Prepara el juego: inventario, historial, personaje y cartas iniciales.
  *
@@ -216,7 +237,8 @@ void ejecutar_opcion_menu(s_GameState *gs, int opcion)
             ui_esperar_enter();
             break;
         case 2:
-            exploracion(gs, 0);
+            mostrar_menu_zonas();
+            exploracion(gs, leer_entero_en_rango(1, CANTIDAD_ZONAS) - 1);
             break;
         case 3:
             inventario(gs);

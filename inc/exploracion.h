@@ -7,6 +7,15 @@
 
 typedef struct s_GameState s_GameState;
 
+/* Cantidad de zonas explorables */
+#define CANTIDAD_ZONAS 3
+
+/**
+ * @brief Devuelve el nombre de la zona indicada.
+ * @param zona 0 = Antokiba, 1 = Masadora, 2 = Soufrabi
+ * @return Nombre de la zona (o "Desconocida" si la zona es invalida).
+ */
+const char *nombre_zona(int zona);
 
 /**
  * @brief Explora una zona hasta que ocurra un combate o un loot,
