@@ -46,14 +46,7 @@ void liberar_memoria(s_GameState *gs)
  * @param gs Estado del juego (no NULL).
  */
 void mostrar_menu(const s_GameState *gs)
-{
-<<<<<<< HEAD
-    printf("\n===== GREED ISLAND =====\n");
-    printf("Jugador: %s\n", gs->personaje.nombre);
-    printf("1. Ver personaje\n2. Explorar Antokiba\n3. Ver inventario\n4. Salir\n");
-    printf("\nIngrese una opcion: ");
-=======
->>>>>>> e2e99d1 (fix: resuelve conflicto en main.c)
+{   
     ui_limpiar_pantalla();
     ui_titulo("GREED ISLAND", COLOR_AMARILLO);
     printf("Jugador: %s%s%s\n", COLOR_VERDE, gs->personaje.nombre, COLOR_RESET);
