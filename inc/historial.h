@@ -78,14 +78,14 @@ historial historial_make_empty(void);
 int historial_push(historial h, const char *desc, TipoAccion t);
 
 /**
- * @brief Deshace (saca) la accion mas reciente de la pila.
+ * @brief Saca (pop) la accion mas reciente de la pila.
  *
- * Libera la descripcion y el nodo. El llamador debe aplicar la reversion
- * con los datos del nodo ANTES de llamar a esta funcion (o pasarlos por
- * puntero de salida, ver variante).
+ * Solo saca la cima: libera la descripcion y el nodo, pero NO aplica ninguna
+ * reversion. Para deshacer una accion de forma completa usar
+ * historial_deshacer().
  *
  * @param h  puntero a historial.
- * @return 0 si se deshizo, -1 si la pila esta vacia o h es NULL.
+ * @return 0 si se saco la cima, -1 si la pila esta vacia o h es NULL.
  */
 int historial_pop(historial h);
 
@@ -97,9 +97,9 @@ int historial_pop(historial h);
 PosHistorial historial_top(const historial h);
 
 /**
- * @brief Consulta la accion mas reciente sin sacarla.
- * @param h  puntero a historial.
- * @return puntero a los datos de la cima, o NULL si esta vacia.
+ * @brief Consulta la accion siguiente (mas antigua) a la dada, sin sacarla.
+ * @param pos puntero a un nodo del historial (no NULL).
+ * @return puntero al nodo siguiente, o NULL si no hay siguiente.
  */
 PosHistorial historial_siguiente(const PosHistorial pos);
 
@@ -149,9 +149,16 @@ int historial_registrar(historial h, const char *desc, TipoAccion t, const s_Rev
 bool historial_puede_deshacer(const historial h);
 
 /**
- * @brief Consume la reversion pendiente (la invalida) y saca el nodo
- *        de la cima. El dev debe haber aplicado ya la reversion
- *        usando historial_obtener_reversion().
+ * @brief Deshace la ultima accion registrada.
+ *
+ * Compone tres pasos: verifica que la ultima accion sea reversible
+ * (historial_puede_deshacer), saca el nodo de la cima (historial_pop) y
+ * libera la reversion pendiente.
+ *
+ * El llamador debe haber aplicado ya la reversion usando
+ * historial_obtener_reversion() ANTES de llamar a esta funcion.
+ *
+ * @param h puntero a historial.
  * @return 0 ok, -1 si no hay nada reversible
  */
 int historial_deshacer(historial h);
