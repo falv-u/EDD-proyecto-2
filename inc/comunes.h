@@ -25,7 +25,7 @@ int leer_entero_en_rango(int min, int max);
 /**
  * @brief Valida que el numero ingresado este en el rango establecido, se repite hasta que se cumplan las condiciones
  * 
- * @param num Numero a validar el rango
+ * @param num Puntero al numero a validar el rango
  * @param min Valor minimo permitido
  * @param max Valor maximo permitido
  */

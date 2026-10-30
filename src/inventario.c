@@ -166,6 +166,9 @@ Posicion encontrar_carta(Lista I, int posicion)
 void imprimir_cartas(Lista I) 
 {
     int cant = 0;
+
+    if(I == NULL)
+        return;
     Posicion aux = I->next;
 
     printf("\n");
