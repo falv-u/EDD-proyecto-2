@@ -38,4 +38,7 @@ void validar_rango(int *num, int min, int max);
  * @return false Si responde no
  */
 bool leer_si_no(void);
+
+
+void imprimir_ingresar_opcion();
 #endif

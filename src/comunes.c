@@ -1,4 +1,5 @@
 #include "comunes.h"
+#include "ui.h"
 
 int leer_entero()
 {
@@ -59,4 +60,9 @@ bool leer_si_no()
 
         printf("\033[1;31mERROR:\033[0m Responde con 's' o 'n'\n");
     }
+}
+
+void imprimir_ingresar_opcion()
+{
+    printf("\n%sIngresa una opcion%s > ", COLOR_CIAN, COLOR_RESET);
 }
