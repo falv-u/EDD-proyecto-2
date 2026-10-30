@@ -39,4 +39,12 @@ void imprimir_carta_sola(s_Carta carta);
  * @param carta Carta a mostrar descripcion
  */
 void mostrar_descripcion_carta(s_Carta carta);
+
+/**
+ * @brief Entrega el color ANSI asociado al tipo de carta.
+ * @param tipo Tipo de carta.
+ * @return Secuencia de color (COLOR_BLANCO si el tipo es desconocido).
+ */
+const char *color_tipo_carta(e_TipoCarta tipo);
+
 #endif

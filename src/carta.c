@@ -35,15 +35,23 @@ s_Carta carta_aleatoria()
 
 void imprimir_carta_sola(s_Carta carta)
 {
-    static const char *tipos[] = {"ataque", "curacion", "defensa", "vida maxima", "especial"};
+    const char *tipos[] = {"ataque", "curacion", "defensa", "vida maxima", "especial"};
 
-    printf("[%s] tipo: %s, valor: %d\n", carta.nombre, tipos[carta.tipo], carta.valor);
+    printf("%s[%s]%s tipo: %s, ", color_tipo_carta(carta.tipo), carta.nombre,
+           COLOR_RESET, tipos[carta.tipo]);
+
+    if(carta.tipo == CURACION && carta.valor == 0)
+        printf("recupera toda la vida\n");
+    else
+        printf("valor: %d\n", carta.valor);
 }
 
 void mostrar_descripcion_carta(s_Carta carta)
 {
-    printf("\n========== CARTA ==========\n");
-    printf("Nombre: %s\n", carta.nombre);
+    const char *color = color_tipo_carta(carta.tipo);
+
+    printf("\n");
+    ui_titulo(carta.nombre, color);
 
     switch(carta.tipo)
     {
@@ -74,5 +82,18 @@ void mostrar_descripcion_carta(s_Carta carta)
             break;
     }
 
-    printf("===========================\n");
+    ui_linea('-', color);
+}
+
+const char *color_tipo_carta(e_TipoCarta tipo)
+{
+    switch(tipo)
+    {
+        case ATAQUE:     return COLOR_ROJO;
+        case CURACION:   return COLOR_VERDE;
+        case DEFENSA:    return COLOR_AZUL;
+        case VIDAMAXIMA: return COLOR_MAGENTA;
+        case ESPECIAL:   return COLOR_AMARILLO;
+        default:         return COLOR_BLANCO;
+    }
 }
