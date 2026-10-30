@@ -57,11 +57,23 @@ void imprimir_cartas(Lista L);
 
 /**
  * @brief Registra el descarte de una carta en el historial y la elimina del inventario.
- * 
+ *
  * @param gs Puntero al estado del juego
  * @param puntCarta Puntero a la carta que se quiere descartar
  */
 void descartar_carta(s_GameState *gs, Posicion puntCarta);
+
+/**
+ * @brief Deshace el descarte de la ultima carta: la reinserta en el
+ *        inventario en la posicion original y saca la accion del historial.
+ *
+ * Solo se puede deshacer si la ultima accion registrada fue descartar una
+ * carta; en otro caso avisa al jugador y no modifica nada.
+ *
+ * @param gs Puntero al estado del juego
+ * @return true si se deshizo el descarte, false si no era posible
+ */
+bool restaurar_carta(s_GameState *gs);
 
 /**
  * @brief Cuenta y devuelve la cantidad de cartas que hay en el inventario.

@@ -101,65 +101,6 @@ void atacar_enemigo(const s_GameState *gs, s_Enemigo *enemigo)
 }
 
 /**
- * @brief Devuelve el indice (0-based) de una posicion en la lista del inventario.
- * Se usa para guardar la posicion en el historial.
- *
- * @param I Lista del inventario (cabeza, no NULL).
- * @param P Posicion a buscar (no NULL, distinta de la cabeza).
- * @return Indice de la posicion, o -1 si no se encuentra o parametros invalidos.
- */
-static int obtener_posicion_inventario(Lista I, Posicion P)
-{
-    int pos = 0;
-    if (I == NULL )
-    {
-	fprintf(stderr, "error: lista NULL\n");
-        return -1;
-    }
-    if ( P == NULL )
-    {
-	fprintf(stderr, "error: Posicion NULL \n");
-        return -1;
-    }
-    if ( P == I)
-    {
-	fprintf(stderr, "error: lista y posicion son iguales\n");
-        return -1;
-    }
-
-    Posicion aux = I->next;
-
-    while (aux != NULL && aux != P)
-    {
-        pos++;
-        aux = aux->next;
-    }
-
-    if (aux == P)
-        return pos;
-
-    return -1;
-}
-
-/**
- * @brief Registra el descarte de una carta en el historial durante el combate.
- * Permite deshacer la accion si es necesario.
- *
- * @param gs  Puntero al estado del juego.
- * @param pos Posicion de la carta descartada en el inventario.
- */
-static void registrar_descarte_combate(s_GameState *gs, Posicion pos)
-{
-    if (gs->Historial != NULL)
-    {
-        s_Reversion rev;
-        rev.carta = pos->carta;
-        rev.posicion = obtener_posicion_inventario(gs->inventario, pos);
-        historial_registrar(gs->Historial, "Descartar carta en combate", A_DESCARTE, &rev);
-    }
-}
-
-/**
  * @brief El enemigo ataca al personaje.
  * Calcula dano usando la defensa del personaje.
  *

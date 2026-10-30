@@ -33,17 +33,18 @@ void inventario(s_GameState *gs)
     if(gs == NULL || gs->inventario == NULL)
         return;
 
-    while(opcion != 5)
+    while(opcion != 6)
     {
         printf("\n========== INVENTARIO ==========\n\n"
                "1. Mostrar cartas\n"
                "2. Buscar carta por nombre\n"
                "3. Usar carta\n"
                "4. Descartar carta\n"
-               "5. Volver\n");
+               "5. Deshacer descarte\n"
+               "6. Volver\n");
 
         printf("\nIngrese una opcion: ");
-        opcion = leer_entero_en_rango(1, 5);
+        opcion = leer_entero_en_rango(1, 6);
 
         switch(opcion)
         {
@@ -86,6 +87,10 @@ void inventario(s_GameState *gs)
                 break;
 
             case 5:
+                restaurar_carta(gs);
+                break;
+
+            case 6:
                 printf("\nVolviendo al menu principal...\n");
                 break;
         }
@@ -311,17 +316,135 @@ void descartar_carta(s_GameState *gs, Posicion puntCarta)
     s_Reversion rev;
 
     rev.carta = puntCarta->carta;
+
+    /* La carta se elimina del inventario y su nombre se libera, por eso la
+     * reversion guarda una copia propia del nombre para poder restaurarla. */
+    rev.carta.nombre = copiar_cadena(puntCarta->carta.nombre);
     rev.posicion = numero;
+
+    if (rev.carta.nombre == NULL)
+    {
+        printf("\nError: no se pudo copiar el nombre de la carta\n");
+        return;
+    }
 
     if(historial_registrar(gs->Historial, "Carta descartada", A_DESCARTE, &rev) != 0)
     {
         printf("\nError al registrar el descarte\n");
+        free(rev.carta.nombre);
         return;
     }
+
+    /* El historial toma dueno del nombre copiado */
+    rev.carta.nombre = NULL;
 
     printf("\nHas descartado %s\n", puntCarta->carta.nombre);
 
     eliminar_carta(gs->inventario, puntCarta);
+}
+
+/**
+ * @brief Calcula la posicion del inventario donde debe insertarse una carta
+ *        para devolverla a su lugar original.
+ *
+ * La posicion es 1-based como en el inventario. Si la posicion es 1 la carta
+ * va al principio (justo despues de la cabecera). Si no hay cartas suficientes
+ * la carta se agrega al final de la lista.
+ *
+ * @param I        Lista del inventario (no NULL).
+ * @param posicion Posicion original de la carta (1-based).
+ * @return Posicion donde insertar la carta, o NULL si la lista es NULL.
+ */
+static Posicion posicion_para_restaurar(Lista I, int posicion)
+{
+    Posicion anterior;
+    Posicion aux;
+
+    if (I == NULL)
+        return NULL;
+
+    /* Posicion 1: la carta va al principio, despues de la cabecera */
+    if (posicion <= 1)
+        return I;
+
+    /* Al quitar la carta, la que estaba despues ocupa su lugar */
+    anterior = encontrar_carta(I, posicion - 1);
+    if (anterior != NULL)
+        return anterior;
+
+    /* No hay cartas suficientes: se inserta al final de la lista */
+    aux = I->next;
+    if (aux == NULL)
+        return I;
+
+    while (aux->next != NULL)
+        aux = aux->next;
+
+    return aux;
+}
+
+/**
+ * @brief Deshace el descarte de la ultima carta: la reinserta en el
+ *        inventario en la posicion original y saca la accion del historial.
+ *
+ * Solo se puede deshacer si la ultima accion registrada fue descartar una
+ * carta. En cualquier otro caso se avisa al jugador y no se modifica nada.
+ *
+ * @param gs Puntero al estado del juego.
+ * @return true si se deshizo el descarte, false si no era posible.
+ * @author Francisco Alvarado
+ */
+bool restaurar_carta(s_GameState *gs)
+{
+    s_Reversion rev;
+    Posicion insercion;
+    int cartas_antes;
+
+    if (gs == NULL || gs->inventario == NULL || gs->Historial == NULL)
+    {
+        ui_mensaje_error("No se puede deshacer: el estado del juego no esta listo");
+        return false;
+    }
+
+    if (!historial_puede_deshacer(gs->Historial))
+    {
+        ui_mensaje_aviso("No se puede deshacer: la ultima accion no fue descartar una carta");
+        return false;
+    }
+
+    if (historial_obtener_reversion(gs->Historial, &rev) != 0)
+    {
+        ui_mensaje_error("No se pudo obtener la accion a deshacer");
+        return false;
+    }
+
+    insercion = posicion_para_restaurar(gs->inventario, rev.posicion);
+    if (insercion == NULL)
+    {
+        ui_mensaje_error("No se pudo restaurar la carta: el inventario no esta disponible");
+        return false;
+    }
+
+    cartas_antes = cantidad_cartas(gs->inventario);
+
+    /* El nombre sigue siendo del historial: agregar_carta hace su propia copia */
+    agregar_carta(gs->inventario, rev.carta, insercion);
+
+    if (cantidad_cartas(gs->inventario) == cartas_antes)
+    {
+        ui_mensaje_error("No se pudo restaurar la carta: no hay memoria suficiente");
+        return false;
+    }
+
+    printf("\nHas restaurado %s\n", rev.carta.nombre ? rev.carta.nombre : "la carta");
+
+    if (historial_deshacer(gs->Historial) != 0)
+    {
+        ui_mensaje_error("No se pudo deshacer la accion en el historial");
+        return false;
+    }
+
+    return true;
 }
 
 bool confirmar_uso_carta(Posicion puntCarta)

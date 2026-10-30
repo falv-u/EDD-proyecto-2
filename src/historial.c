@@ -24,6 +24,29 @@ static char *copiar_cadena(const char *or)
 	return copia;
 
 }
+
+/**
+ * @brief Libera el nombre duplicado de una reversion y la deja sin nombre.
+ *
+ * Se usa cuando la reversion se consume, se invalida o el historial se
+ * destruye, para no dejar memoria reservada.
+ *
+ * @param rev Reversion a limpiar (puede ser NULL).
+ */
+static void liberar_reversion(s_Reversion *rev)
+{
+	if (rev == NULL)
+	{
+		return;
+	}
+
+	if (rev->carta.nombre != NULL)
+	{
+		free(rev->carta.nombre);
+		rev->carta.nombre = NULL;
+	}
+}
+
 historial historial_make_empty(void)
 {
 	historial h = malloc(sizeof(struct s_historial));
@@ -94,7 +117,8 @@ int historial_pop(historial h)
 	h->CantidadRegistros--;
 	h->HayReversionPendiente = false;
 
-	h->reversion = (s_Reversion){0};
+	/* La reversion se consume: se libera el nombre duplicado de la carta */
+	liberar_reversion(&h->reversion);
 	free(popear->datos.descripcion);
 	free(popear);
 	return 0;
@@ -169,6 +193,9 @@ void historial_destroy(historial h)
 	h->HayReversionPendiente = false;
 	h->nodo = NULL;
 	h->CantidadRegistros = 0;
+
+	/* El historial se destruye: la reversion pendiente tambien se libera */
+	liberar_reversion(&h->reversion);
 }
 
 void historial_free(historial *h)
@@ -202,11 +229,15 @@ int historial_registrar(historial h, const char *desc, TipoAccion t, const s_Rev
 		return -1;
 	}
 
-	/* Cualquier accion nueva invalida la ventana de reversion anterior. */
+	/* Cualquier accion nueva invalida la ventana de reversion anterior:
+	 * se libera el nombre duplicado que tenia la reversion. */
+	liberar_reversion(&h->reversion);
 	h->HayReversionPendiente = false;
 
 	if (t == A_DESCARTE && rev != NULL)
 	{
+		/* El historial toma dueno del nombre duplicado de la carta:
+		 * lo libera al consumir la reversion, al invalidarla o al destruirse. */
 		h->reversion = *rev;
 		h->HayReversionPendiente = true;
 	}

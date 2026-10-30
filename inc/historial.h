@@ -128,6 +128,11 @@ void historial_free(historial *h);
  *        reversible (A_DESCARTE), guarda la 'foto' para poder deshacerla.
  *        La foto de la acción anterior, si existía, se descarta (ventana de 1).
  *
+ * Si t == A_DESCARTE, el historial toma el dueno del nombre de la carta de
+ * rev->carta.nombre (debe ser una copia propia): lo libera cuando la
+ * reversion se consume, se invalida o el historial se destruye. El llamador
+ * no debe liberarlo ni usarlo despues de un registro exitoso.
+ *
  * @param h          historial
  * @param desc       descripción (se copia)
  * @param t          tipo de acción
@@ -153,6 +158,11 @@ int historial_deshacer(historial h);
 
 /**
  * @brief Copia la reversión pendiente en *out sin consumirla.
+ *
+ * El nombre de la carta copiada sigue siendo propiedad del historial: el
+ * llamador no debe liberarlo ni modificarlo. Se libera al consumir la
+ * reversion.
+ *
  * @return 0 ok, -1 si no hay reversión pendiente
  */
 int historial_obtener_reversion(const historial h, s_Reversion *out);
