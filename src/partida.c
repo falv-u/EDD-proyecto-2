@@ -334,7 +334,6 @@ static int cargar_inventario(FILE *f, s_GameState *gs, char *nombre_personaje)
         char *nom_tok;
         char *tipo_tok;
         char *valor_tok;
-        char *nombre_copia;
 
         if (!leer_linea(f, linea, sizeof(linea)))
         {
@@ -364,24 +363,12 @@ static int cargar_inventario(FILE *f, s_GameState *gs, char *nombre_personaje)
         strncpy(nombre_carta, nom_tok, sizeof(nombre_carta) - 1);
         nombre_carta[sizeof(nombre_carta) - 1] = '\0';
 
-        /* strdup reserva memoria en heap para el nombre de la carta.
-         * Esta memoria pasa a ser propiedad del nodo del inventario (carta.nombre).
-         * Se liberara en vaciar_inventario() cuando se vacie o recargue el inventario. */
-        nombre_copia = strdup(nombre_carta);
-        if (nombre_copia == NULL)
-        {
-            fprintf(stderr, "error: sin memoria para copiar nombre de carta\n");
-            free(nombre_personaje);
-            return -1;
-        }
+        carta.nombre = nombre_carta;   /* prestado; agregar_carta copia */
+        carta.tipo   = (e_TipoCarta)atoi(tipo_tok);
+        carta.valor  = atoi(valor_tok);
 
-        carta.nombre = nombre_copia;
-        carta.tipo = (e_TipoCarta)atoi(tipo_tok);
-        carta.valor = atoi(valor_tok);
-
-        /* agregar_carta() reserva memoria para un nuevo nodo del inventario (s_Inventario).
-         * El nodo contiene una copia superficial de la carta (incluyendo el puntero a nombre_copia).
-         * El nodo se libera en vaciar_inventario() y el nombre. */
+        /* agregar_carta() reserva memoria para el nodo (s_Inventario) y
+         * duplica el nombre: el nodo es dueno de la copia. */
         agregar_carta(gs->inventario, carta, gs->inventario);
     }
 

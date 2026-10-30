@@ -2,7 +2,7 @@
 
 s_Carta carta_aleatoria()
 {
-   const s_Carta cartas_disp[] = 
+   s_Carta cartas_disp[] = 
    {
         {"Aliento del Arcangel", CURACION, 0},
         {"Espada de la Verdad", ATAQUE, 5},

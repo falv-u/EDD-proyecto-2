@@ -1,5 +1,30 @@
 #include "juego.h"
 
+/**
+ * @brief Reserva memoria y copia una cadena terminada en '\0'.
+ *
+ * Se usa para que cada nodo del inventario tenga su propia copia
+ * del nombre de la carta.
+ *
+ * @param or Cadena origen (no NULL).
+ * @return Puntero a la copia en heap, o NULL si or es NULL o
+ *         falla malloc.
+ */
+static char *copiar_cadena(const char *or)
+{
+    if(or == NULL)
+        return NULL;
+
+    size_t tam = strlen(or) + 1;
+    char *copia = malloc(tam);
+
+    if(copia == NULL)
+        return NULL;
+
+    memcpy(copia, or, tam);
+    return copia;
+}
+
 void inventario(s_GameState *gs)
 {
     int opcion = -1;
@@ -100,6 +125,7 @@ void vaciar_inventario(Lista I)
     while(aux != NULL)
     {
         siguiente = aux->next;
+        free(aux->carta.nombre);
         free(aux);
         aux = siguiente;
     }
@@ -124,6 +150,18 @@ void agregar_carta(Lista I, s_Carta carta, Posicion P)
     }
 
     aux->carta = carta;
+
+    /* El nodo es dueno de su propia copia del nombre; se libera
+     * en vaciar_inventario()/eliminar_carta(). */
+    aux->carta.nombre = copiar_cadena(carta.nombre);
+
+    if(aux->carta.nombre == NULL)
+    {
+        free(aux);
+        ui_mensaje_error("No se pudo copiar el nombre de la carta");
+        return;
+    }
+
     aux->next = P->next;
     aux->prev = P;
 
@@ -142,7 +180,8 @@ void eliminar_carta(Lista I, Posicion P)
 
     if(P->next != NULL)
         P->next->prev = P->prev;
-    
+
+    free(P->carta.nombre);
     free(P);
 }
 

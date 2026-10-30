@@ -14,7 +14,7 @@ typedef enum
 
 typedef struct
 {
-    const char *nombre;
+    char *nombre;
     e_TipoCarta tipo;
     int valor;
 } s_Carta;
