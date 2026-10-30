@@ -47,12 +47,10 @@ void liberar_memoria(s_GameState *gs)
  */
 void mostrar_menu(const s_GameState *gs)
 {
-<<<<<<< HEAD
     printf("\n===== GREED ISLAND =====\n");
     printf("Jugador: %s\n", gs->personaje.nombre);
     printf("1. Ver personaje\n2. Explorar Antokiba\n3. Ver inventario\n4. Salir\n");
     printf("\nIngrese una opcion: ");
-=======
     ui_limpiar_pantalla();
     ui_titulo("GREED ISLAND", COLOR_AMARILLO);
     printf("Jugador: %s%s%s\n", COLOR_VERDE, gs->personaje.nombre, COLOR_RESET);
@@ -64,7 +62,6 @@ void mostrar_menu(const s_GameState *gs)
     ui_opcion_menu(3, "Ver inventario");
     ui_opcion_menu(4, "Salir");
     imprimir_ingresar_opcion();
->>>>>>> b1d93b2 (add : ui.c & ui.h)
 }
  
 /**
