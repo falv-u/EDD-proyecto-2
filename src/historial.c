@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "historial.h"
+#include "ui.h"
 
 static char *copiar_cadena(const char *or)
 {
@@ -326,18 +327,19 @@ void historial_imprimir(const historial h)
 
 	if (h->nodo == NULL)
 	{
-		printf("Historial vacio\n");
+		ui_mensaje_aviso("Historial vacio");
 		return;
 	}
 
-	printf("=== HISTORIAL (%d registros) ===\n", h->CantidadRegistros);
+	ui_titulo("HISTORIAL", COLOR_MAGENTA);
+	printf("%d registros (del mas reciente al mas antiguo)\n\n", h->CantidadRegistros);
 	actual = h->nodo;
 	i = 1;
 	while (actual != NULL)
 	{
-		printf("%d. [%s] %s\n", i, tipo_accion_a_string(actual->datos.tipo), actual->datos.descripcion);
+		printf(" %2d. %s[%s]%s %s\n", i, COLOR_AMARILLO,tipo_accion_a_string(actual->datos.tipo), COLOR_RESET,actual->datos.descripcion);
 		actual = actual->siguiente;
 		i++;
 	}
-	printf("================================\n");
+	ui_linea('=', COLOR_MAGENTA);
 }

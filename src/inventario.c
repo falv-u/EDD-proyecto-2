@@ -35,15 +35,7 @@ void inventario(s_GameState *gs)
 
     while(opcion != 6)
     {
-        printf("\n========== INVENTARIO ==========\n\n"
-               "1. Mostrar cartas\n"
-               "2. Buscar carta por nombre\n"
-               "3. Usar carta\n"
-               "4. Descartar carta\n"
-               "5. Deshacer descarte\n"
-               "6. Volver\n");
-
-        printf("\nIngrese una opcion: ");
+        mostrar_menu_inventario(cantidad_cartas(gs->inventario));
         opcion = leer_entero_en_rango(1, 6);
 
         switch(opcion)
@@ -53,26 +45,8 @@ void inventario(s_GameState *gs)
                 break;
 
             case 2:
-            {
-                char nombre[100];
-
-                printf("\nIngrese el nombre de la carta: ");
-                fgets(nombre, sizeof(nombre), stdin);
-                nombre[strcspn(nombre, "\n")] = '\0';
-
-                puntCarta = buscar_carta_nombre(gs->inventario, nombre);
-
-                if(puntCarta == NULL)
-                {
-                    printf("\nCarta no encontrada en el inventario\n");
-                }
-                else
-                {
-                    printf("\nCarta encontrada:\n");
-                    imprimir_carta_sola(puntCarta->carta);
-                }
+                buscar_carta_interactivo(gs->inventario);
                 break;
-            }
 
             case 3:
                 usar_carta_en_combate(gs, NULL);
@@ -91,9 +65,13 @@ void inventario(s_GameState *gs)
                 break;
 
             case 6:
-                printf("\nVolviendo al menu principal...\n");
+                ui_mensaje_info("Volviendo al menu principal...");
+                ui_pausa_ms(PAUSA_CORTA);
                 break;
         }
+
+        if(opcion != 6)
+            ui_esperar_enter();
     }
 }
 
@@ -109,7 +87,7 @@ Lista crear_inventario(Lista I)
 
     if(I == NULL)
     {
-        printf("\nError: No se pudo crear el inventario\n");
+        ui_mensaje_error("No se pudo crear el inventario");
         return NULL;
     }
 
@@ -150,7 +128,7 @@ void agregar_carta(Lista I, s_Carta carta, Posicion P)
 
     if(aux == NULL)
     {
-        printf("\nError: No se pudo agregar la carta\n");
+        ui_mensaje_error("No se pudo agregar la carta (sin memoria)");
         return;
     }
 
@@ -207,25 +185,35 @@ Posicion encontrar_carta(Lista I, int posicion)
     return aux;
 }
 
-void imprimir_cartas(Lista I) 
+void imprimir_cartas(Lista L) 
 {
-    int cant = 0;
+    int indice = 1;
+    Posicion aux;
 
-    if(I == NULL)
+    if(L == NULL)
+    {
+        ui_mensaje_error("El inventario no esta inicializado");
         return;
-    Posicion aux = I->next;
+    }
 
     printf("\n");
+    ui_linea('-', COLOR_CIAN);
+
+    if(L->next == NULL)
+    {
+        ui_mensaje_aviso("El inventario esta vacio.");
+        return;
+    }
+
+    aux = L->next;
     while(aux != NULL)
     {
-        printf("%d. %s\t", cant + 1, aux->carta.nombre);
-
-        if((++cant % 3) == 0) 
-            printf("\n");
-        
+        printf(" %2d. ", indice);
+        imprimir_carta_sola(aux->carta);
+        indice++;
         aux = aux->next;
     }
-    printf("\n");
+    ui_linea('-', COLOR_CIAN);
 }
 
 int cantidad_cartas(Lista I)
@@ -270,7 +258,7 @@ Posicion seleccionar_carta(Lista I)
 {
     if(I == NULL || I->next == NULL)
     {
-        printf("\nEl inventario esta vacio\n");
+        ui_mensaje_aviso("El inventario esta vacio");
         return NULL;
     }
 
@@ -285,7 +273,7 @@ Posicion seleccionar_carta(Lista I)
     puntCarta = encontrar_carta(I, num);
 
     if(puntCarta == NULL)
-        printf("\nCarta no encontrada en el inventario\n");
+        ui_mensaje_aviso("Carta no encontrada en el inventario");
 
     return puntCarta;
 }
@@ -297,7 +285,7 @@ void descartar_carta(s_GameState *gs, Posicion puntCarta)
 
     if(gs->Historial == NULL)
     {
-        printf("\nError: historial es NULL\n");
+        ui_mensaje_error("El historial no esta inicializado");
         return;
     }
 
@@ -324,13 +312,13 @@ void descartar_carta(s_GameState *gs, Posicion puntCarta)
 
     if (rev.carta.nombre == NULL)
     {
-        printf("\nError: no se pudo copiar el nombre de la carta\n");
+        ui_mensaje_error("No se pudo copiar el nombre de la carta");
         return;
     }
 
     if(historial_registrar(gs->Historial, "Carta descartada", A_DESCARTE, &rev) != 0)
     {
-        printf("\nError al registrar el descarte\n");
+        ui_mensaje_error("Error al registrar el descarte");
         free(rev.carta.nombre);
         return;
     }
@@ -338,7 +326,7 @@ void descartar_carta(s_GameState *gs, Posicion puntCarta)
     /* El historial toma dueno del nombre copiado */
     rev.carta.nombre = NULL;
 
-    printf("\nHas descartado %s\n", puntCarta->carta.nombre);
+    ui_mensaje_exito("Has descartado %s", puntCarta->carta.nombre);
 
     eliminar_carta(gs->inventario, puntCarta);
 }
@@ -436,7 +424,7 @@ bool restaurar_carta(s_GameState *gs)
         return false;
     }
 
-    printf("\nHas restaurado %s\n", rev.carta.nombre ? rev.carta.nombre : "la carta");
+    ui_mensaje_exito("Has restaurado %s", rev.carta.nombre ? rev.carta.nombre : "la carta");
 
     if (historial_deshacer(gs->Historial) != 0)
     {
@@ -456,4 +444,44 @@ bool confirmar_uso_carta(Posicion puntCarta)
 
     printf("\nEstas seguro de utilizar esta carta? ");
     return leer_si_no();
+}
+
+
+void buscar_carta_interactivo(Lista I)
+{
+    char nombre[100];
+    Posicion puntCarta;
+
+    printf("\nIngrese el nombre de la carta: ");
+
+    if(fgets(nombre, sizeof(nombre), stdin) == NULL)
+        return;
+    nombre[strcspn(nombre, "\n")] = '\0';
+
+    puntCarta = buscar_carta_nombre(I, nombre);
+
+    if(puntCarta == NULL)
+    {
+        ui_mensaje_aviso("Carta no encontrada en el inventario");
+    }
+    else
+    {
+        ui_mensaje_exito("Carta encontrada:");
+        imprimir_carta_sola(puntCarta->carta);
+    }
+}
+
+
+void mostrar_menu_inventario(int cantidad)
+{
+    ui_limpiar_pantalla();
+    ui_titulo("INVENTARIO", COLOR_CIAN);
+    printf("Cartas guardadas: %s%d%s\n\n", COLOR_AMARILLO, cantidad, COLOR_RESET);
+    ui_opcion_menu(1, "Mostrar cartas");
+    ui_opcion_menu(2, "Buscar carta por nombre");
+    ui_opcion_menu(3, "Usar carta");
+    ui_opcion_menu(4, "Descartar carta");
+    ui_opcion_menu(5, "Deshacer descarte");
+    ui_opcion_menu(6, "Volver");
+    imprimir_ingresar_opcion();
 }

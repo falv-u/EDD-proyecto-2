@@ -126,4 +126,17 @@ Posicion seleccionar_carta(Lista I);
  */
 Lista crear_inventario(Lista I);
 
+/**
+ * @brief Limpia la pantalla y muestra el menu del inventario.
+ * @param cantidad Cantidad de cartas guardadas.
+ */
+void mostrar_menu_inventario(int cantidad);
+
+
+/**
+ * @brief Pide un nombre por teclado y muestra la carta encontrada (si existe).
+ * @param I Lista del inventario (no NULL).
+ */
+void buscar_carta_interactivo(Lista I);
+
 #endif
