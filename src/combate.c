@@ -41,7 +41,10 @@ Cola generar_grupo(void)
     if (grupo == NULL)
         return NULL;
 
-    printf("\n\t Un grupo de enemigos te bloquea el paso!\n\tEnemigos : \n");
+    ui_titulo("EMBOSCADA", COLOR_ROJO);
+    ui_mensaje_aviso("Un grupo de enemigos te bloquea el paso!");
+    ui_pausa_ms(PAUSA_MEDIA);
+    printf("\nEnemigos:\n");
 
     for (int i = 1; i <= cantidad; i++)
     {
@@ -52,9 +55,14 @@ Cola generar_grupo(void)
             cola_destruir(grupo);
             return NULL;
         }
-        printf(" %d. %s (%d PV)\n", enemigo.id, enemigo.nombre, enemigo.vida);
+        printf("  %s%d.%s %s (%d PV)\n", COLOR_ROJO, enemigo.id, COLOR_RESET,
+               enemigo.nombre, enemigo.vida);
+        ui_pausa_ms(PAUSA_CORTA);
     }
-    printf("Siguiente enemigo: %s\n", cola_frente(grupo)->nombre);
+
+    printf("\n");
+    ui_mensaje_info("Siguiente enemigo: %s", cola_frente(grupo)->nombre);
+    ui_pausa_ms(PAUSA_LARGA);
     return grupo;
 }
 
@@ -68,14 +76,21 @@ Cola generar_grupo(void)
  */
 void mostrar_estado(const s_GameState *gs, const s_Enemigo *enemigo, int enEspera)
 {
-    printf("\n===== COMBATE =====\n");
-    printf("%s: %d/%d PV | Ataque %d | Defensa %d\n",
-           gs->personaje.nombre, gs->personaje.vida, gs->personaje.vidaMax,
-           gs->personaje.ataque, gs->personaje.defensa);
-    printf("Enemigo actual: %s (%d/%d PV)\n", enemigo->nombre, enemigo->vida, enemigo->vidaMax);
-    printf("Enemigos en espera: %d\n", enEspera);
-    printf("\n1. Atacar\n2. Ver inventario\n3. Usar carta");
-    printf("\nIngrese una opcion: ");
+    printf("\n");
+    ui_titulo("COMBATE", COLOR_ROJO);
+
+    printf("%s%s%s\n  ", COLOR_VERDE, gs->personaje.nombre, COLOR_RESET);
+    ui_barra_vida(gs->personaje.vida, gs->personaje.vidaMax, ANCHO_BARRA);
+    printf("  ATK %d | DEF %d\n\n", gs->personaje.ataque, gs->personaje.defensa);
+
+    printf("%s%s%s\n  ", COLOR_ROJO, enemigo->nombre, COLOR_RESET);
+    ui_barra_vida(enemigo->vida, enemigo->vidaMax, ANCHO_BARRA);
+    printf("\n  Enemigos en espera: %d\n\n", enEspera);
+
+    ui_opcion_menu(1, "Atacar");
+    ui_opcion_menu(2, "Ver inventario");
+    ui_opcion_menu(3, "Usar carta");
+    imprimir_ingresar_opcion();
 }
 
 /**
@@ -94,10 +109,12 @@ void atacar_enemigo(const s_GameState *gs, s_Enemigo *enemigo)
     if (enemigo->vida < 0)
         enemigo->vida = 0;
 
+    printf("\n");
     if (critico)
-        printf("!Golpe critico!\n");
-    printf("Atacas a %s: %d de danho. %s: %d/%d PV.\n",
-           enemigo->nombre, danho, enemigo->nombre, enemigo->vida, enemigo->vidaMax);
+        ui_mensaje_aviso("!Golpe critico!");
+    printf("%sAtacas a %s:%s %d de danho. %s: %d/%d PV.\n",COLOR_VERDE, enemigo->nombre, COLOR_RESET, danho,
+           enemigo->nombre, enemigo->vida, enemigo->vidaMax);
+    ui_pausa_ms(PAUSA_MEDIA);
 }
 
 /**
@@ -132,11 +149,12 @@ static void turno_enemigo(s_GameState *gs, s_Enemigo *enemigo)
         gs->personaje.vida = 0;
 
     if (critico)
-        printf("!Golpe critico del enemigo!\n");
+        ui_mensaje_aviso("!Golpe critico del enemigo!");
 
-    printf("%s ataca a %s: %d de danho. %s: %d/%d PV.\n",
-           enemigo->nombre, gs->personaje.nombre, danho,
+    printf("%s%s ataca a %s:%s %d de danho. %s: %d/%d PV.\n",
+           COLOR_ROJO, enemigo->nombre, gs->personaje.nombre, COLOR_RESET, danho,
            gs->personaje.nombre, gs->personaje.vida, gs->personaje.vidaMax);
+    ui_pausa_ms(PAUSA_MEDIA);   
 }
 
 /**
@@ -157,7 +175,7 @@ bool usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
 
     if (gs->inventario->next == NULL)
     {
-        printf("\nEl inventario esta vacio.\n");
+        ui_mensaje_aviso("El inventario esta vacio.");
         return false; 
     }
 
@@ -168,12 +186,12 @@ bool usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
     pos = encontrar_carta(gs->inventario, idx);
     if (pos == NULL)
     {
-        printf("Carta no encontrada.\n");
+        ui_mensaje_aviso("Carta no encontrada.");
         return false;
     }
     if(!confirmar_uso_carta(pos))
     {
-        printf("\nUso de carta cancelado\n");
+        ui_mensaje_info("Uso de carta cancelado");
         return false;
     }
 
@@ -191,7 +209,7 @@ bool usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
             if(carta->valor == 0)
             {
                 gs->personaje.vida = gs->personaje.vidaMax;
-                printf("\nUsas %s y recuperas toda tu vida.\n", carta->nombre);
+                ui_mensaje_exito("Usas %s y recuperas toda tu vida.", carta->nombre);
             }
             else
             {
@@ -200,12 +218,12 @@ bool usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
                 if(gs->personaje.vida > gs->personaje.vidaMax)
                     gs->personaje.vida = gs->personaje.vidaMax;
 
-                printf("\nUsas %s y recuperas %d puntos de vida.\n",
-                    carta->nombre, carta->valor);
+                ui_mensaje_exito("Usas %s y recuperas %d puntos de vida.", carta->nombre, carta->valor);
             }
 
-            printf("Vida actual: %d/%d\n",
-                gs->personaje.vida, gs->personaje.vidaMax);
+            printf("Vida actual: ");
+            ui_barra_vida(gs->personaje.vida, gs->personaje.vidaMax, ANCHO_BARRA);
+            printf("\n");
 
             eliminar_carta(gs->inventario, pos);
             break;
@@ -213,30 +231,31 @@ bool usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
         case VIDAMAXIMA:
             gs->personaje.vidaMax += carta->valor;
             gs->personaje.vida = gs->personaje.vidaMax;
-            printf("\nUsas %s y aumentas tu vida maxima en %d. Vida maxima: %d\n",
+            ui_mensaje_exito("Usas %s y aumentas tu vida maxima en %d. Vida maxima: %d",
                    carta->nombre, carta->valor, gs->personaje.vidaMax);
             eliminar_carta(gs->inventario, pos);
             break;
 
         case ATAQUE:
             gs->personaje.ataque += carta->valor;
-            printf("\nEquipas %s y aumentas tu ataque en %d. Ataque actual: %d\n",
+            ui_mensaje_exito("Equipas %s y aumentas tu ataque en %d. Ataque actual: %d",
                    carta->nombre, carta->valor, gs->personaje.ataque);
             eliminar_carta(gs->inventario, pos);
             break;
 
         case DEFENSA:
             gs->personaje.defensa += carta->valor;
-            printf("\nEquipas %s y aumentas tu defensa en %d. Defensa actual: %d\n",
+            ui_mensaje_exito("Equipas %s y aumentas tu defensa en %d. Defensa actual: %d",
                    carta->nombre, carta->valor, gs->personaje.defensa);
             eliminar_carta(gs->inventario, pos);
             break;
 
         default:
-            printf("\nCarta no disponible\n");
-            break;
+            ui_mensaje_aviso("Carta no disponible");
+            return false;
     }
 
+    ui_pausa_ms(PAUSA_MEDIA);
     if(gs->Historial != NULL)
         historial_registrar(gs->Historial, descripcion, A_CONSUMIBLE, NULL);
 
@@ -263,10 +282,11 @@ void combate(s_GameState *gs)
         return;
     }
 
+    ui_limpiar_pantalla();
     grupo = generar_grupo();
     if (grupo == NULL)
     {
-        fprintf(stderr, "error: no se pudo crear el grupo de enemigos\n");
+        ui_mensaje_error("No se pudo crear el grupo de enemigos");
         return;
     }
 
@@ -276,7 +296,9 @@ void combate(s_GameState *gs)
     {
         if (cola_esta_vacia(grupo))
         {
-            printf("\n!Has derrotado a todos los enemigos!\n");
+            printf("\n");
+            ui_mensaje_exito("!Has derrotado a todos los enemigos!");
+            ui_esperar_enter();
             fin_combate = true;
             break;
         }
@@ -300,7 +322,7 @@ void combate(s_GameState *gs)
 
                 if (enemigo_actual->vida <= 0)
                 {
-                    printf("\n!Has derrotado a %s!\n", enemigo_actual->nombre);
+                    ui_mensaje_exito("!Has derrotado a %s!", enemigo_actual->nombre);
                     char descripcion[128];
                     snprintf(descripcion, sizeof(descripcion), "Se derrotó al enemigo %s",
                              enemigo_actual->nombre ? enemigo_actual->nombre : "desconocido");
@@ -309,6 +331,11 @@ void combate(s_GameState *gs)
                     {
                         fprintf(stderr, "error: fallo al desencolar enemigo muerto\n");
                     }
+                    else if (!cola_esta_vacia(grupo))
+                    {
+                        ui_mensaje_info("Siguiente enemigo: %s", cola_frente(grupo)->nombre);
+                    }
+                    ui_pausa_ms(PAUSA_MEDIA);
                 }
                 else
                 {
@@ -350,7 +377,7 @@ void combate(s_GameState *gs)
 
     if (personaje_muerto)
     {
-        printf("\n%s ha caido en combate... GAME OVER\n", gs->personaje.nombre);
         gs->ejecutando = false;
+        ui_pantalla_game_over(gs->personaje.nombre);
     }
 }
