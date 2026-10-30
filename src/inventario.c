@@ -49,7 +49,7 @@ void inventario(s_GameState *gs)
                 break;
 
             case 3:
-                usar_carta_en_combate(gs, NULL);
+                usar_carta_en_combate(gs);
                 break;
 
             case 4:

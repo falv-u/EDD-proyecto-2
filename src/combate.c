@@ -163,9 +163,8 @@ static void turno_enemigo(s_GameState *gs, s_Enemigo *enemigo)
  * Las de ataque/defensa se equipan (aumentan stats permanentemente).
  *
  * @param gs             Puntero al estado del juego.
- * @param enemigo_actual Puntero al enemigo actual (no usado directamente, se pasa por consistencia).
  */
-bool usar_carta_en_combate(s_GameState *gs, s_Enemigo *enemigo_actual)
+bool usar_carta_en_combate(s_GameState *gs)
 {
     Posicion pos = NULL;
     int idx;
@@ -354,7 +353,7 @@ void combate(s_GameState *gs)
                 break;
 
             case 3:
-                if(usar_carta_en_combate(gs, enemigo_actual) &&
+                if(usar_carta_en_combate(gs) &&
                 !cola_esta_vacia(grupo) && enemigo_actual->vida > 0)
                 {
                     turno_enemigo(gs, enemigo_actual);
