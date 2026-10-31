@@ -33,10 +33,10 @@ void inventario(s_GameState *gs)
     if(gs == NULL || gs->inventario == NULL)
         return;
 
-    while(opcion != 6)
+    while(opcion != 7)
     {
         mostrar_menu_inventario(cantidad_cartas(gs->inventario));
-        opcion = leer_entero_en_rango(1, 6);
+        opcion = leer_entero_en_rango(1, 7);
 
         switch(opcion)
         {
@@ -49,10 +49,14 @@ void inventario(s_GameState *gs)
                 break;
 
             case 3:
-                usar_carta_en_combate(gs);
+                buscar_carta_id_interactivo(gs->inventario);
                 break;
 
             case 4:
+                usar_carta_en_combate(gs);
+                break;
+
+            case 5:
                 puntCarta = seleccionar_carta(gs->inventario);
 
                 if(puntCarta != NULL)
@@ -60,17 +64,17 @@ void inventario(s_GameState *gs)
 
                 break;
 
-            case 5:
+            case 6:
                 restaurar_carta(gs);
                 break;
 
-            case 6:
+            case 7:
                 ui_mensaje_info("Volviendo al menu principal...");
                 ui_pausa_ms(PAUSA_CORTA);
                 break;
         }
 
-        if(opcion != 6)
+        if(opcion != 7)
             ui_esperar_enter();
     }
 }
@@ -133,6 +137,11 @@ void agregar_carta(Lista I, s_Carta carta, Posicion P)
     }
 
     aux->carta = carta;
+
+    /* Si la carta no tiene id (por ejemplo, si viene de una partida
+     * guardada) se le asigna uno nuevo para que siga siendo unica. */
+    if(aux->carta.id <= 0)
+        aux->carta.id = generar_id_carta();
 
     /* El nodo es dueno de su propia copia del nombre; se libera
      * en vaciar_inventario()/eliminar_carta(). */
@@ -254,6 +263,31 @@ Posicion buscar_carta_nombre(Lista I, const char *nombre)
     return NULL;
 }
 
+/**
+ * @brief Busca una carta del inventario por su id unico.
+ *
+ * @param I Lista del inventario.
+ * @param id Identificador de la carta buscada.
+ * @return Posicion de la carta o NULL si no se encuentra.
+ */
+Posicion buscar_carta_id(Lista I, int id)
+{
+    if(I == NULL || id <= 0)
+        return NULL;
+
+    Posicion aux = I->next;
+
+    while(aux != NULL)
+    {
+        if(aux->carta.id == id)
+            return aux;
+
+        aux = aux->next;
+    }
+
+    return NULL;
+}
+
 Posicion seleccionar_carta(Lista I)
 {
     if(I == NULL || I->next == NULL)
@@ -262,15 +296,15 @@ Posicion seleccionar_carta(Lista I)
         return NULL;
     }
 
-    int num;
+    int id;
     Posicion puntCarta;
 
     imprimir_cartas(I);
 
-    printf("\nIngrese el numero de la carta: ");
-    num = leer_entero();
+    printf("\nIngrese el ID de la carta: ");
+    id = leer_entero();
 
-    puntCarta = encontrar_carta(I, num);
+    puntCarta = buscar_carta_id(I, id);
 
     if(puntCarta == NULL)
         ui_mensaje_aviso("Carta no encontrada en el inventario");
@@ -472,6 +506,31 @@ void buscar_carta_interactivo(Lista I)
 }
 
 
+/**
+ * @brief Pide un ID por teclado y muestra la carta encontrada (si existe).
+ * @param I Lista del inventario (no NULL).
+ */
+void buscar_carta_id_interactivo(Lista I)
+{
+    int id;
+    Posicion puntCarta;
+
+    printf("\nIngrese el ID de la carta: ");
+    id = leer_entero();
+
+    puntCarta = buscar_carta_id(I, id);
+
+    if(puntCarta == NULL)
+    {
+        ui_mensaje_aviso("Carta no encontrada en el inventario");
+    }
+    else
+    {
+        ui_mensaje_exito("Carta encontrada:");
+        imprimir_carta_sola(puntCarta->carta);
+    }
+}
+
 void mostrar_menu_inventario(int cantidad)
 {
     ui_limpiar_pantalla();
@@ -479,9 +538,10 @@ void mostrar_menu_inventario(int cantidad)
     printf("Cartas guardadas: %s%d%s\n\n", COLOR_AMARILLO, cantidad, COLOR_RESET);
     ui_opcion_menu(1, "Mostrar cartas");
     ui_opcion_menu(2, "Buscar carta por nombre");
-    ui_opcion_menu(3, "Usar carta");
-    ui_opcion_menu(4, "Descartar carta");
-    ui_opcion_menu(5, "Deshacer descarte");
-    ui_opcion_menu(6, "Volver");
+    ui_opcion_menu(3, "Buscar carta por ID");
+    ui_opcion_menu(4, "Usar carta");
+    ui_opcion_menu(5, "Descartar carta");
+    ui_opcion_menu(6, "Deshacer descarte");
+    ui_opcion_menu(7, "Volver");
     imprimir_ingresar_opcion();
 }

@@ -1,23 +1,31 @@
 #include "juego.h"
 
+/* Ultimo id generado: los ids de carta son correlativos y unicos */
+static int ultimo_id_carta = 0;
+
+int generar_id_carta()
+{
+    return ++ultimo_id_carta;
+}
+
 s_Carta carta_aleatoria()
 {
-   s_Carta cartas_disp[] = 
+   s_Carta cartas_disp[] =
    {
-        {"Aliento del Arcangel", CURACION, 0},
-        {"Espada de la Verdad", ATAQUE, 5},
-        {"Martillo Eterno", ATAQUE, 7},
-        {"Collar del Paladin", DEFENSA, 2},
-        {"Armadura del Sacrificio", DEFENSA, 5},
-        {"Armadura Dorada", DEFENSA, 3},
-        {"Restaurador Vital", CURACION, 30},
-        {"Genio Curativo", CURACION, 20},
-        {"Pocion Rejuvenecedora", VIDAMAXIMA, 10},
-        {"Esteroides", VIDAMAXIMA, 20}
+        {"Aliento del Arcangel", CURACION, 0, 0},
+        {"Espada de la Verdad", ATAQUE, 5, 0},
+        {"Martillo Eterno", ATAQUE, 7, 0},
+        {"Collar del Paladin", DEFENSA, 2, 0},
+        {"Armadura del Sacrificio", DEFENSA, 5, 0},
+        {"Armadura Dorada", DEFENSA, 3, 0},
+        {"Restaurador Vital", CURACION, 30, 0},
+        {"Genio Curativo", CURACION, 20, 0},
+        {"Pocion Rejuvenecedora", VIDAMAXIMA, 10, 0},
+        {"Esteroides", VIDAMAXIMA, 20, 0}
    };
 
    int porcentaje = rand()%100;
-   s_Carta carta;
+   s_Carta carta = {0};
 
    if(porcentaje <  5) carta = cartas_disp[0];
    else if(porcentaje < 20) carta = cartas_disp[1];
@@ -30,6 +38,9 @@ s_Carta carta_aleatoria()
    else if(porcentaje < 95) carta = cartas_disp[8];
    else if(porcentaje < 100) carta = cartas_disp[9];
 
+   /* Cada carta generada recibe un id unico */
+   carta.id = generar_id_carta();
+
    return carta;
 }
 
@@ -37,8 +48,8 @@ void imprimir_carta_sola(s_Carta carta)
 {
     const char *tipos[] = {"ataque", "curacion", "defensa", "vida maxima", "especial"};
 
-    printf("%s[%s]%s tipo: %s, ", color_tipo_carta(carta.tipo), carta.nombre,
-           COLOR_RESET, tipos[carta.tipo]);
+    printf("%s[%s]%s (ID %d) tipo: %s, ", color_tipo_carta(carta.tipo), carta.nombre,
+           COLOR_RESET, carta.id, tipos[carta.tipo]);
 
     if(carta.tipo == CURACION && carta.valor == 0)
         printf("recupera toda la vida\n");

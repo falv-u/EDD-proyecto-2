@@ -17,14 +17,25 @@ typedef struct
     char *nombre;
     e_TipoCarta tipo;
     int valor;
+    int id;       /* identificador unico de la carta */
 } s_Carta;
 
 /**
  * @brief Genera una carta aleatoria por probabilidad
- * 
- * @return Carta generada aleatoriamente.
+ *
+ * @return Carta generada aleatoriamente (con id unico asignado).
  */
 s_Carta carta_aleatoria();
+
+/**
+ * @brief Genera el siguiente identificador unico de carta.
+ *
+ * Los ids son correlativos y nunca se repiten dentro de una misma
+ * ejecucion del juego.
+ *
+ * @return Id unico para una nueva carta.
+ */
+int generar_id_carta();
 
 /**
  * @brief Muestra el nombre, tipo y valor de una carta

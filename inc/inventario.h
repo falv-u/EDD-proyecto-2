@@ -111,8 +111,17 @@ Posicion encontrar_carta(Lista I, int posicion);
 Posicion buscar_carta_nombre(Lista I, const char *nombre);
 
 /**
- * @brief Permite seleccionar una carta del inventario ingresando su número.
- * 
+ * @brief Busca una carta del inventario mediante su id unico.
+ *
+ * @param I  Lista del inventario.
+ * @param id Identificador de la carta a buscar.
+ * @return Posicion de la carta o NULL si no se encuentra.
+ */
+Posicion buscar_carta_id(Lista I, int id);
+
+/**
+ * @brief Permite seleccionar una carta del inventario ingresando su ID.
+ *
  * @param I Lista del inventario.
  * @return Posicion seleccionada o NULL si no es valida.
  */
@@ -138,5 +147,11 @@ void mostrar_menu_inventario(int cantidad);
  * @param I Lista del inventario (no NULL).
  */
 void buscar_carta_interactivo(Lista I);
+
+/**
+ * @brief Pide un ID por teclado y muestra la carta encontrada (si existe).
+ * @param I Lista del inventario (no NULL).
+ */
+void buscar_carta_id_interactivo(Lista I);
 
 #endif

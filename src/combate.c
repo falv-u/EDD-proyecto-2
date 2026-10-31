@@ -179,10 +179,10 @@ bool usar_carta_en_combate(s_GameState *gs)
     }
 
     imprimir_cartas(gs->inventario);
-    printf("\nIngrese el numero de la carta a usar: ");
-    idx = leer_entero_en_rango(1, cantidad_cartas(gs->inventario));
+    printf("\nIngrese el ID de la carta a usar: ");
+    idx = leer_entero();
 
-    pos = encontrar_carta(gs->inventario, idx);
+    pos = buscar_carta_id(gs->inventario, idx);
     if (pos == NULL)
     {
         ui_mensaje_aviso("Carta no encontrada.");
