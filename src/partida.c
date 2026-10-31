@@ -293,12 +293,16 @@ static int cargar_personaje(FILE *f, s_Personaje *pj, char **nombre_salida)
  * @brief Lee y valida la seccion INVENTARIO.
  * Formato esperado: INVENTARIO;cantidad
  * Seguido de lineas: CARTA;nombre;tipo;valor
+ *
+ * Las cartas se cargan en una lista aparte: si algo falla, el inventario
+ * de gs queda sin modificar.
+ *
  * @param f archivo abierto
- * @param gs estado del juego (para acceder al inventario)
+ * @param inv puntero donde se deja la lista con las cartas cargadas
  * @param nombre_personaje nombre del personaje (para liberar en caso de error)
  * @return 0 si ok, -1 si error.
  */
-static int cargar_inventario(FILE *f, s_GameState *gs, char *nombre_personaje)
+static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
 {
     char linea[PARTIDA_LINEA_MAX];
     char *tok;
@@ -328,7 +332,16 @@ static int cargar_inventario(FILE *f, s_GameState *gs, char *nombre_personaje)
     }
     cantidad = atoi(tok);
 
-    vaciar_inventario(gs->inventario);
+    /* Las cartas se cargan en una lista aparte: si algo falla, el inventario
+     * de gs queda sin modificar. */
+    *inv = crear_inventario(NULL);
+
+    if (*inv == NULL)
+    {
+        fprintf(stderr, "error: no se pudo crear el inventario\n");
+        free(nombre_personaje);
+        return -1;
+    }
 
     for (i = 0; i < cantidad; i++)
     {
@@ -342,6 +355,9 @@ static int cargar_inventario(FILE *f, s_GameState *gs, char *nombre_personaje)
         {
             fprintf(stderr, "error: EOF inesperado leyendo carta %d de %d\n", i + 1, cantidad);
             free(nombre_personaje);
+            vaciar_inventario(*inv);
+            free(*inv);
+            *inv = NULL;
             return -1;
         }
 
@@ -349,6 +365,9 @@ static int cargar_inventario(FILE *f, s_GameState *gs, char *nombre_personaje)
         {
             fprintf(stderr, "error: formato invalido, se esperaba 'CARTA' en linea %d\n", i + 1);
             free(nombre_personaje);
+            vaciar_inventario(*inv);
+            free(*inv);
+            *inv = NULL;
             return -1;
         }
 
@@ -360,6 +379,9 @@ static int cargar_inventario(FILE *f, s_GameState *gs, char *nombre_personaje)
         {
             fprintf(stderr, "error: campos incompletos en carta %d (nombre;tipo;valor)\n", i + 1);
             free(nombre_personaje);
+            vaciar_inventario(*inv);
+            free(*inv);
+            *inv = NULL;
             return -1;
         }
 
@@ -372,7 +394,7 @@ static int cargar_inventario(FILE *f, s_GameState *gs, char *nombre_personaje)
 
         /* agregar_carta() reserva memoria para el nodo (s_Inventario) y
          * duplica el nombre: el nodo es dueno de la copia. */
-        agregar_carta(gs->inventario, carta, gs->inventario);
+        agregar_carta(*inv, carta, *inv);
     }
 
     return 0;
@@ -435,6 +457,7 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
     char *tok;
     int cantidad;
     int i;
+    historial hist;
 
     if (!leer_linea(f, linea, sizeof(linea)))
     {
@@ -459,20 +482,11 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
     }
     cantidad = atoi(tok);
 
-    if (gs->Historial == NULL)
-    {
-        /* historial_make_empty() reserva memoria para el struct s_historial.
-         * El struct se liberara con historial_destroy() al recargar o salir. */
-        gs->Historial = historial_make_empty();
-    }
-    else
-    {
-        historial_destroy(gs->Historial);
-        /* historial_make_empty() reserva memoria para el nuevo struct s_historial. */
-        gs->Historial = historial_make_empty();
-    }
+    /* El historial se arma aparte y solo se instala en gs cuando toda la
+     * seccion se cargo bien: si algo falla, gs queda sin modificar. */
+    hist = historial_make_empty();
 
-    if (gs->Historial == NULL)
+    if (hist == NULL)
     {
         fprintf(stderr, "error: no se pudo crear historial\n");
         free(nombre_personaje);
@@ -491,8 +505,7 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
         {
             fprintf(stderr, "error: EOF inesperado leyendo accion %d de %d\n", i + 1, cantidad);
             free(nombre_personaje);
-            historial_destroy(gs->Historial);
-            gs->Historial = NULL;
+            historial_free(&hist);
             return -1;
         }
 
@@ -500,8 +513,7 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
         {
             fprintf(stderr, "error: formato invalido, se esperaba 'ACCION' en linea %d\n", i + 1);
             free(nombre_personaje);
-            historial_destroy(gs->Historial);
-            gs->Historial = NULL;
+            historial_free(&hist);
             return -1;
         }
 
@@ -512,8 +524,7 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
         {
             fprintf(stderr, "error: campos incompletos en accion %d (tipo;descripcion)\n", i + 1);
             free(nombre_personaje);
-            historial_destroy(gs->Historial);
-            gs->Historial = NULL;
+            historial_free(&hist);
             return -1;
         }
 
@@ -532,15 +543,18 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
 
         /* historial_push() reserva memoria para un nuevo nodo (s_NodoHistorial)
          * y para copiar la descripcion (strdup). */
-        if (historial_push(gs->Historial, desc, (TipoAccion)t) != 0)
+        if (historial_push(hist, desc, (TipoAccion)t) != 0)
         {
             fprintf(stderr, "error: fallo al agregar accion al historial\n");
             free(nombre_personaje);
-            historial_destroy(gs->Historial);
-            gs->Historial = NULL;
+            historial_free(&hist);
             return -1;
         }
     }
+
+    /* Todo salio bien: se reemplaza el historial de gs por el recien cargado */
+    historial_free(&gs->Historial);
+    gs->Historial = hist;
 
     return 0;
 }
@@ -568,6 +582,7 @@ int partida_cargar(s_GameState *gs, const char *ruta)
     FILE *f;
     s_Personaje pj = {0};
     char *nombre_personaje = NULL;
+    Lista inv = NULL;
 
     if (gs == NULL)
     {
@@ -596,7 +611,7 @@ int partida_cargar(s_GameState *gs, const char *ruta)
         return -1;
     }
 
-    if (cargar_inventario(f, gs, nombre_personaje) != 0)
+    if (cargar_inventario(f, &inv, nombre_personaje) != 0)
     {
         fclose(f);
         return -1;
@@ -605,10 +620,21 @@ int partida_cargar(s_GameState *gs, const char *ruta)
     if (cargar_historial(f, gs, nombre_personaje) != 0)
     {
         fclose(f);
+        vaciar_inventario(inv);
+        free(inv);
         return -1;
     }
 
     fclose(f);
+
+    /* Todo salio bien: se aplica el inventario cargado al estado real */
+    if (gs->inventario != NULL)
+    {
+        vaciar_inventario(gs->inventario);
+        free(gs->inventario);
+    }
+
+    gs->inventario = inv;
 
     /* Liberar nombre anterior del personaje si existe.
      * Este nombre fue reservado con strdup() en una carga anterior
