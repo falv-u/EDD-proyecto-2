@@ -7,6 +7,8 @@ SRC_DIR=src
 OBJ_DIR=obj
 SRC_FILES=$(wildcard $(SRC_DIR)/*.c)
 OBJ_FILES=$(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC_FILES))
+DOCS   = docs/html
+
 INCLUDE=-I./inc/
 # LIBS= -lm
 
@@ -30,6 +32,12 @@ folders:
 
 run: all
 	@./build/$(EXEC)
+doc:
+	doxygen Doxyfile
+	@echo "Listo: $(DOCS)/index.html"
+
+doc-clean:
+	rm -rf docs/
 
 send:
 	tar czf $(GRUPO)-$(NTAR).tgz --transform 's,^,$(GRUPO)-$(NTAR)/,' Makefile src inc docs
