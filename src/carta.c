@@ -8,6 +8,12 @@ int generar_id_carta()
     return ++ultimo_id_carta;
 }
 
+void carta_fijar_ultimo_id(int id)
+{
+    if(id > ultimo_id_carta)
+        ultimo_id_carta = id;
+}
+
 s_Carta carta_aleatoria()
 {
    s_Carta cartas_disp[] =

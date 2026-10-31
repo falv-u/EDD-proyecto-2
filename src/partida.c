@@ -9,6 +9,7 @@
 
 #define SEP ';'
 #define PARTIDA_LINEA_MAX 1024
+#define CARGA_MAX_ITEMS 1000  /* tope de cartas o acciones que se pueden cargar */
 
 /**
  * @brief Nombre textual de un TipoAccion (para guardar).
@@ -61,10 +62,11 @@ static void guardar_inventario(FILE *f, const Lista inv)
 
     for (p = inv->next; p != NULL; p = p->next)
     {
-        fprintf(f, "CARTA%c%s%c%d%c%d\n",
+        fprintf(f, "CARTA%c%s%c%d%c%d%c%d\n",
                 SEP, p->carta.nombre ? p->carta.nombre : "",
                 SEP, (int)p->carta.tipo,
-                SEP, p->carta.valor);
+                SEP, p->carta.valor,
+                SEP, p->carta.id);
     }
 }
 
@@ -177,14 +179,81 @@ static int leer_linea(FILE *f, char *buf, int tam)
 }
 
 /**
+ * @brief Tokenizador manual de la linea actual.
+ *
+ * Reemplaza a strtok: no depende de su estado global y trabaja con lineas
+ * modificables (char *), sin casts que rompan el const.
+ *
+ * El separador SEP se reemplaza por '\0' dentro de la linea y token_actual
+ * queda apuntando al resto de la linea por parsear.
+ */
+static char *token_actual = NULL;
+
+/**
+ * @brief Avanza al siguiente token de la linea y lo separa con '\0'.
+ * @param puntero Puntero al resto de la linea por parsear.
+ * @return Puntero al token encontrado o NULL si no hay mas.
+ */
+static char *avanzar_token(char *puntero)
+{
+    char *ini;
+    char *fin;
+
+    if (puntero == NULL)
+    {
+        return NULL;
+    }
+
+    /* Se saltan los separadores sobrantes, igual que hacia strtok */
+    while (*puntero == SEP)
+    {
+        puntero++;
+    }
+
+    if (*puntero == '\0')
+    {
+        token_actual = NULL;
+        return NULL;
+    }
+
+    ini = puntero;
+    fin = strchr(ini, SEP);
+
+    if (fin != NULL)
+    {
+        *fin = '\0';
+        token_actual = fin + 1;
+    }
+    else
+    {
+        token_actual = NULL;
+    }
+
+    return ini;
+}
+
+/**
+ * @brief Devuelve el primer token de la linea y reinicia el tokenizador.
+ * @param linea Linea a parsear (se modifica al separar los tokens).
+ * @return Puntero al primer token o NULL si la linea esta vacia.
+ */
+static char *primer_token(char *linea)
+{
+    token_actual = linea;
+
+    return avanzar_token(token_actual);
+}
+
+/**
  * @brief Verifica que el primer token de la linea sea el esperado.
- * @param linea linea a verificar (se modifica por strtok)
+ * @param linea linea a verificar (se modifica al separar los tokens)
  * @param esperado token que se espera encontrar
  * @return 1 si coincide, 0 si no coincide o linea vacia
  */
-static int verificar_token(const char *linea, const char *esperado)
+static int verificar_token(char *linea, const char *esperado)
 {
-    char *tok = strtok((char *)linea, ";");
+    char *tok = primer_token(linea);
+
     if (tok == NULL)
     {
         return 0;
@@ -202,7 +271,7 @@ static int verificar_token(const char *linea, const char *esperado)
  */
 static char *siguiente_token(void)
 {
-    return strtok(NULL, ";");
+    return avanzar_token(token_actual);
 }
 
 /**
@@ -266,6 +335,14 @@ static int cargar_personaje(FILE *f, s_Personaje *pj, char **nombre_salida)
     }
     pj->vidaMax = atoi(tok);
 
+    if (pj->vida < 0 || pj->vidaMax <= 0 || pj->vida > pj->vidaMax)
+    {
+        fprintf(stderr, "error: valores de vida invalidos (vida=%d, vidaMax=%d)\n",
+                pj->vida, pj->vidaMax);
+        free(nombre);
+        return -1;
+    }
+
     tok = siguiente_token();
     if (tok == NULL)
     {
@@ -292,7 +369,7 @@ static int cargar_personaje(FILE *f, s_Personaje *pj, char **nombre_salida)
 /**
  * @brief Lee y valida la seccion INVENTARIO.
  * Formato esperado: INVENTARIO;cantidad
- * Seguido de lineas: CARTA;nombre;tipo;valor
+ * Seguido de lineas: CARTA;nombre;tipo;valor;id
  *
  * Las cartas se cargan en una lista aparte: si algo falla, el inventario
  * de gs queda sin modificar.
@@ -308,6 +385,8 @@ static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
     char *tok;
     int cantidad;
     int i;
+    int max_id = 0;
+    Posicion ultimo;
 
     if (!leer_linea(f, linea, sizeof(linea)))
     {
@@ -332,6 +411,14 @@ static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
     }
     cantidad = atoi(tok);
 
+    if (cantidad < 0 || cantidad > CARGA_MAX_ITEMS)
+    {
+        fprintf(stderr, "error: cantidad de cartas invalida (%d), maximo %d\n",
+                cantidad, CARGA_MAX_ITEMS);
+        free(nombre_personaje);
+        return -1;
+    }
+
     /* Las cartas se cargan en una lista aparte: si algo falla, el inventario
      * de gs queda sin modificar. */
     *inv = crear_inventario(NULL);
@@ -343,6 +430,10 @@ static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
         return -1;
     }
 
+    /* ultima = cabecera: cada carta se inserta despues de la anterior para
+     * conservar el orden del archivo */
+    ultimo = *inv;
+
     for (i = 0; i < cantidad; i++)
     {
         char nombre_carta[256];
@@ -350,6 +441,7 @@ static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
         char *nom_tok;
         char *tipo_tok;
         char *valor_tok;
+        char *id_tok;
 
         if (!leer_linea(f, linea, sizeof(linea)))
         {
@@ -374,10 +466,11 @@ static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
         nom_tok = siguiente_token();
         tipo_tok = siguiente_token();
         valor_tok = siguiente_token();
+        id_tok = siguiente_token();
 
-        if (nom_tok == NULL || tipo_tok == NULL || valor_tok == NULL)
+        if (nom_tok == NULL || tipo_tok == NULL || valor_tok == NULL || id_tok == NULL)
         {
-            fprintf(stderr, "error: campos incompletos en carta %d (nombre;tipo;valor)\n", i + 1);
+            fprintf(stderr, "error: campos incompletos en carta %d (nombre;tipo;valor;id)\n", i + 1);
             free(nombre_personaje);
             vaciar_inventario(*inv);
             free(*inv);
@@ -391,11 +484,31 @@ static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
         carta.nombre = nombre_carta;   /* prestado; agregar_carta copia */
         carta.tipo   = (e_TipoCarta)atoi(tipo_tok);
         carta.valor  = atoi(valor_tok);
+        carta.id     = atoi(id_tok);
+
+        if (carta.id <= 0)
+        {
+            fprintf(stderr, "error: id de carta invalido (%d) en la carta %d\n",
+                    carta.id, i + 1);
+            free(nombre_personaje);
+            vaciar_inventario(*inv);
+            free(*inv);
+            *inv = NULL;
+            return -1;
+        }
+
+        if (carta.id > max_id)
+            max_id = carta.id;
 
         /* agregar_carta() reserva memoria para el nodo (s_Inventario) y
          * duplica el nombre: el nodo es dueno de la copia. */
-        agregar_carta(*inv, carta, *inv);
+        agregar_carta(*inv, carta, ultimo);
+        ultimo = ultimo->next;
     }
+
+    /* El contador de ids queda sincronizado con los ids leidos: los ids
+     * nuevos no pueden colisionar con los de las cartas cargadas. */
+    carta_fijar_ultimo_id(max_id);
 
     return 0;
 }
@@ -481,6 +594,14 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
         return -1;
     }
     cantidad = atoi(tok);
+
+    if (cantidad < 0 || cantidad > CARGA_MAX_ITEMS)
+    {
+        fprintf(stderr, "error: cantidad de acciones invalida (%d), maximo %d\n",
+                cantidad, CARGA_MAX_ITEMS);
+        free(nombre_personaje);
+        return -1;
+    }
 
     /* El historial se arma aparte y solo se instala en gs cuando toda la
      * seccion se cargo bien: si algo falla, gs queda sin modificar. */
@@ -569,7 +690,7 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
  * Formato del archivo:
  *   linea 1: PERSONAJE;nombre;vida;vidaMax;ataque;defensa
  *   linea 2: INVENTARIO;cantidad
- *   lineas siguientes: CARTA;nombre;tipo;valor   (una por carta)
+ *   lineas siguientes: CARTA;nombre;tipo;valor;id   (una por carta)
  *   linea siguiente: HISTORIAL;cantidad
  *   lineas siguientes: ACCION;tipo;descripcion   (una por accion)
  *

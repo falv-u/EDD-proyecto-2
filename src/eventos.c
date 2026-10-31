@@ -1,18 +1,18 @@
 #include "juego.h"
 
 
-int definir_evento()
+e_TipoEvento definir_evento()
 {
     int prob = rand()%100;
 
     if(prob < 40)
-        return 1;
+        return COMBATE;
     else if(prob<60)
-        return 2;
+        return LOOTEO;
     else if(prob<70)
-        return 3;
-    else 
-        return 0;
+        return DESGRACIA;
+    else
+        return NADA;
 
 }
 
@@ -54,10 +54,14 @@ void evento_looteo(s_GameState *gs)
 void evento_desgracia(s_GameState *gs)
 {
     int dano = 5 + rand() % 6;
+    char descripcion[128];
 
     printf("\n");
     ui_mensaje_error("!Caes en una trampa de Greed Island! Pierdes %d de vida.", dano);
     gs->personaje.vida -= dano;
+
+    snprintf(descripcion, sizeof(descripcion), "Cayó en una trampa (-%d PV)", dano);
+    historial_registrar(gs->Historial, descripcion, A_REGISTRO, NULL);
 
     if(gs->personaje.vida <= 0)
     {

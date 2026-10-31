@@ -38,6 +38,16 @@ s_Carta carta_aleatoria();
 int generar_id_carta();
 
 /**
+ * @brief Sincroniza el contador de ids con el id mas alto leido de un archivo.
+ *
+ * Se usa al cargar una partida: asi los ids nuevos no colisionan con los
+ * que ya tienen las cartas cargadas.
+ *
+ * @param id Id mas alto encontrado en la partida cargada.
+ */
+void carta_fijar_ultimo_id(int id);
+
+/**
  * @brief Muestra el nombre, tipo y valor de una carta
  * 
  * @param carta Carta que se quiere imprimir

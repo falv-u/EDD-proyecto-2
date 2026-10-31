@@ -10,11 +10,11 @@ typedef enum
 } e_TipoEvento;
 
 /**
- * @brief Funcion para definir el evento que sucederá. 1 == COMBATE , 2 == LOOTEO, 3 == DESGRACIA, 0 == NADA
- * 
- * @return retorna 1 , 2 , 3 o 0
+ * @brief Funcion para definir el evento que sucederá.
+ *
+ * @return COMBATE, LOOTEO, DESGRACIA o NADA
  */
-int definir_evento();
+e_TipoEvento definir_evento(void);
 /**
  * @brief   Ejecuta los eventos llamando a las funciones correspondientes
  * 
