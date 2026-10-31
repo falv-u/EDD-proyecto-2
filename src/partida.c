@@ -59,6 +59,11 @@ static void guardar_personaje(FILE *f, const s_Personaje *pj)
 static void guardar_inventario(FILE *f, const Lista inv)
 {
     Posicion p;
+    if (inv == NULL)
+    {
+        fprintf(f, "INVENTARIO%c0\n", SEP);
+        return;
+    }
     int cantidad = cantidad_cartas(inv);
 
     fprintf(f, "INVENTARIO%c%d\n", SEP, cantidad);
@@ -362,6 +367,16 @@ static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
 
         agregar_carta(*inv, carta, ultimo);
         ultimo = ultimo->next;
+
+	if (ultimo == NULL)
+	{
+	    fprintf(stderr, "error: sin memoria al agregar carta\n");
+	    free(nombre_personaje);
+	    vaciar_inventario(*inv);
+	    free(*inv);
+	    *inv = NULL;
+	    return -1;
+	}
     }
 
     carta_fijar_ultimo_id(max_id);
