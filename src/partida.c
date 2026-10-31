@@ -1,5 +1,7 @@
-/* Necesario antes de los includes para tener strdup() incluso con -std=c99 */
-#define _POSIX_C_SOURCE 200809L
+/*
+ * partida.c - guardar/cargar partida en CSV
+ * Nota: strtok_r porque strtok es global y rompe el const.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,37 +11,40 @@
 
 #define SEP ';'
 #define PARTIDA_LINEA_MAX 1024
-#define CARGA_MAX_ITEMS 1000  /* tope de cartas o acciones que se pueden cargar */
+#define CARGA_MAX_ITEMS 1000
 
-/**
- * @brief Nombre textual de un TipoAccion (para guardar).
- */
+// copia un string a heap, devuelve NULL si falla
+static char *duplicar_cadena(const char *s)
+{
+    char *c;
+
+    if (s == NULL)
+        return NULL;
+
+    c = malloc(strlen(s) + 1);
+    if (c == NULL)
+        return NULL;
+
+    strcpy(c, s);
+    return c;
+}
+
+// nombre del tipo de accion para el archivo
 static const char *tipo_a_texto(TipoAccion t)
 {
     switch (t)
     {
-        case A_CONSUMIBLE:
-             return "A_CONSUMIBLE";
-        case A_REGISTRO:
-             return "A_REGISTRO";
-        case A_COMBATE_I:
-             return "A_COMBATE_I";
-        case A_COM_TURNO:
-             return "A_COM_TURNO";
-        case A_FIN_COMBATE:
-             return "A_FIN_COMBATE";
-        case A_DESCARTE:
-             return "A_DESCARTE";
-        default:
-             return "A_REGISTRO";
+        case A_CONSUMIBLE:  return "A_CONSUMIBLE";
+        case A_REGISTRO:    return "A_REGISTRO";
+        case A_COMBATE_I:   return "A_COMBATE_I";
+        case A_COM_TURNO:   return "A_COM_TURNO";
+        case A_FIN_COMBATE: return "A_FIN_COMBATE";
+        case A_DESCARTE:    return "A_DESCARTE";
+        default:            return "A_REGISTRO";
     }
 }
 
-/* Funciones auxiliares para partida_guardar */
-
-/**
- * @brief Escribe la seccion PERSONAJE al archivo.
- */
+// escribe la seccion PERSONAJE
 static void guardar_personaje(FILE *f, const s_Personaje *pj)
 {
     fprintf(f, "PERSONAJE%c%s%c%d%c%d%c%d%c%d\n",
@@ -50,9 +55,7 @@ static void guardar_personaje(FILE *f, const s_Personaje *pj)
             SEP, pj->defensa);
 }
 
-/**
- * @brief Escribe la seccion INVENTARIO al archivo.
- */
+// escribe la seccion INVENTARIO con sus cartas
 static void guardar_inventario(FILE *f, const Lista inv)
 {
     Posicion p;
@@ -70,11 +73,20 @@ static void guardar_inventario(FILE *f, const Lista inv)
     }
 }
 
-/**
- * @brief Escribe la seccion HISTORIAL al archivo.
- * Guarda las acciones de mas viejo a mas nuevo para que al cargar
- * con push la pila quede con el mas nuevo en el tope.
- */
+// recursa hasta el final y escribe al volver (mas viejo primero en archivo)
+static void escribir_historial_rec(FILE *f, PosHistorial n)
+{
+    if (n == NULL)
+        return;
+
+    escribir_historial_rec(f, n->siguiente);
+
+    fprintf(f, "ACCION%c%s%c%s\n",
+            SEP, tipo_a_texto(n->datos.tipo),
+            SEP, n->datos.descripcion ? n->datos.descripcion : "");
+}
+
+// escribe la seccion HISTORIAL
 static void guardar_historial(FILE *f, const historial h)
 {
     int contador;
@@ -88,40 +100,7 @@ static void guardar_historial(FILE *f, const historial h)
     contador = h->CantidadRegistros;
     fprintf(f, "HISTORIAL%c%d\n", SEP, contador);
 
-    if (contador > 0)
-    {
-        /* Reservar array temporal de punteros a nodos para escribir
-         * el historial en orden inverso (mas viejo primero en archivo) */
-        PosHistorial *nodos = malloc(contador * sizeof(PosHistorial));
-        if (nodos)
-        {
-            PosHistorial actual;
-            int idx = 0;
-
-            for (actual = h->nodo; actual != NULL; actual = actual->siguiente)
-                nodos[idx++] = actual;
-
-            for (int i = contador - 1; i >= 0; i--)
-            {
-                PosHistorial nh = nodos[i];
-                fprintf(f, "ACCION%c%s%c%s\n",
-                        SEP, tipo_a_texto(nh->datos.tipo),
-                        SEP, nh->datos.descripcion ? nh->datos.descripcion : "");
-            }
-            free(nodos);
-        }
-        else
-        {
-            /* Respaldo: escribir en orden natural si falla malloc */
-            PosHistorial actual;
-            for (actual = h->nodo; actual != NULL; actual = actual->siguiente)
-            {
-                fprintf(f, "ACCION%c%s%c%s\n",
-                        SEP, tipo_a_texto(actual->datos.tipo),
-                        SEP, actual->datos.descripcion ? actual->datos.descripcion : "");
-            }
-        }
-    }
+    escribir_historial_rec(f, h->nodo);
 }
 
 int partida_guardar(const s_GameState *gs, const char *ruta)
@@ -130,19 +109,17 @@ int partida_guardar(const s_GameState *gs, const char *ruta)
 
     if (gs == NULL)
     {
-        fprintf(stderr, "error: estado de juego invalido (NULL)\n");
+        fprintf(stderr, "error: estado NULL\n");
         return -1;
     }
 
     if (ruta == NULL)
-    {
         ruta = PARTIDA_RUTA;
-    }
 
     f = fopen(ruta, "w");
     if (f == NULL)
     {
-        fprintf(stderr, "error: no se pudo abrir archivo '%s' para escritura\n", ruta);
+        fprintf(stderr, "error: no se pudo abrir '%s'\n", ruta);
         return -1;
     }
 
@@ -152,184 +129,75 @@ int partida_guardar(const s_GameState *gs, const char *ruta)
 
     if (fclose(f) != 0)
     {
-        fprintf(stderr, "error: fallo al cerrar archivo '%s'\n", ruta);
+        fprintf(stderr, "error: fallo al cerrar\n");
         return -1;
     }
 
     return 0;
 }
 
-/* Funciones auxiliares privadas para partida_cargar */
-
-/**
- * @brief Lee una linea del archivo, elimina el salto de linea.
- * @param f archivo abierto
- * @param buf buffer donde guardar la linea
- * @param tam tamano del buffer
- * @return 1 si ok, 0 si EOF o error de lectura
- */
+// lee una linea y le quita el \n
 static int leer_linea(FILE *f, char *buf, int tam)
 {
     if (fgets(buf, tam, f) == NULL)
-    {
         return 0;
-    }
+
     buf[strcspn(buf, "\n")] = '\0';
     return 1;
 }
 
-/**
- * @brief Tokenizador manual de la linea actual.
- *
- * Reemplaza a strtok: no depende de su estado global y trabaja con lineas
- * modificables (char *), sin casts que rompan el const.
- *
- * El separador SEP se reemplaza por '\0' dentro de la linea y token_actual
- * queda apuntando al resto de la linea por parsear.
- */
-static char *token_actual = NULL;
-
-/**
- * @brief Avanza al siguiente token de la linea y lo separa con '\0'.
- * @param puntero Puntero al resto de la linea por parsear.
- * @return Puntero al token encontrado o NULL si no hay mas.
- */
-static char *avanzar_token(char *puntero)
-{
-    char *ini;
-    char *fin;
-
-    if (puntero == NULL)
-    {
-        return NULL;
-    }
-
-    /* Se saltan los separadores sobrantes, igual que hacia strtok */
-    while (*puntero == SEP)
-    {
-        puntero++;
-    }
-
-    if (*puntero == '\0')
-    {
-        token_actual = NULL;
-        return NULL;
-    }
-
-    ini = puntero;
-    fin = strchr(ini, SEP);
-
-    if (fin != NULL)
-    {
-        *fin = '\0';
-        token_actual = fin + 1;
-    }
-    else
-    {
-        token_actual = NULL;
-    }
-
-    return ini;
-}
-
-/**
- * @brief Devuelve el primer token de la linea y reinicia el tokenizador.
- * @param linea Linea a parsear (se modifica al separar los tokens).
- * @return Puntero al primer token o NULL si la linea esta vacia.
- */
-static char *primer_token(char *linea)
-{
-    token_actual = linea;
-
-    return avanzar_token(token_actual);
-}
-
-/**
- * @brief Verifica que el primer token de la linea sea el esperado.
- * @param linea linea a verificar (se modifica al separar los tokens)
- * @param esperado token que se espera encontrar
- * @return 1 si coincide, 0 si no coincide o linea vacia
- */
-static int verificar_token(char *linea, const char *esperado)
-{
-    char *tok = primer_token(linea);
-
-    if (tok == NULL)
-    {
-        return 0;
-    }
-    if (strcmp(tok, esperado) != 0)
-    {
-        return 0;
-    }
-    return 1;
-}
-
-/**
- * @brief Obtiene el siguiente token de la linea actual.
- * @return puntero al token o NULL si no hay mas.
- */
-static char *siguiente_token(void)
-{
-    return avanzar_token(token_actual);
-}
-
-/**
- * @brief Lee y valida la seccion PERSONAJE.
- * Formato esperado: PERSONAJE;nombre;vida;vidaMax;ataque;defensa
- * @param f archivo abierto
- * @param pj estructura donde guardar los datos (solo si todo ok)
- * @param nombre_salida puntero donde guardar el nombre duplicado (debe liberarse)
- * @return 0 si ok, -1 si error.
- */
+// lee seccion PERSONAJE, deja todo en pj si todo ok
 static int cargar_personaje(FILE *f, s_Personaje *pj, char **nombre_salida)
 {
-    char linea[PARTIDA_LINEA_MAX];
+    char linea[1024];
+    char copia[PARTIDA_LINEA_MAX];
+    char *saveptr;
     char *tok;
     char *nombre;
 
     if (!leer_linea(f, linea, sizeof(linea)))
     {
-        fprintf(stderr, "error: EOF inesperado leyendo seccion PERSONAJE\n");
+        fprintf(stderr, "error: falta PERSONAJE\n");
         return -1;
     }
 
-    if (!verificar_token(linea, "PERSONAJE"))
+    strncpy(copia, linea, sizeof(copia) - 1);
+    copia[sizeof(copia) - 1] = '\0';
+
+    tok = strtok_r(copia, ";", &saveptr);
+    if (tok == NULL || strcmp(tok, "PERSONAJE") != 0)
     {
-        fprintf(stderr, "error: formato invalido, se esperaba 'PERSONAJE' al inicio\n");
+        fprintf(stderr, "error: formato invalido\n");
         return -1;
     }
 
-    tok = siguiente_token();
+    tok = strtok_r(NULL, ";", &saveptr);
     if (tok == NULL)
     {
-        fprintf(stderr, "error: falta nombre en seccion PERSONAJE\n");
+        fprintf(stderr, "error: falta nombre\n");
         return -1;
     }
 
-    /* strdup reserva memoria en heap para copiar el nombre del personaje.
-     * Esta memoria pasa a ser propiedad de pj->nombre y luego de gs->personaje.nombre.
-     * Se liberara en partida_cargar al cargar una nueva partida o al salir. */
-    nombre = strdup(tok);
+    nombre = duplicar_cadena(tok);
     if (nombre == NULL)
     {
-        fprintf(stderr, "error: sin memoria para copiar nombre\n");
+        fprintf(stderr, "error: sin memoria\n");
         return -1;
     }
 
-    tok = siguiente_token();
+    tok = strtok_r(NULL, ";", &saveptr);
     if (tok == NULL)
     {
-        fprintf(stderr, "error: falta vida en seccion PERSONAJE\n");
+        fprintf(stderr, "error: falta vida\n");
         free(nombre);
         return -1;
     }
     pj->vida = atoi(tok);
 
-    tok = siguiente_token();
+    tok = strtok_r(NULL, ";", &saveptr);
     if (tok == NULL)
     {
-        fprintf(stderr, "error: falta vidaMax en seccion PERSONAJE\n");
+        fprintf(stderr, "error: falta vidaMax\n");
         free(nombre);
         return -1;
     }
@@ -337,25 +205,24 @@ static int cargar_personaje(FILE *f, s_Personaje *pj, char **nombre_salida)
 
     if (pj->vida < 0 || pj->vidaMax <= 0 || pj->vida > pj->vidaMax)
     {
-        fprintf(stderr, "error: valores de vida invalidos (vida=%d, vidaMax=%d)\n",
-                pj->vida, pj->vidaMax);
+        fprintf(stderr, "error: vida invalida\n");
         free(nombre);
         return -1;
     }
 
-    tok = siguiente_token();
+    tok = strtok_r(NULL, ";", &saveptr);
     if (tok == NULL)
     {
-        fprintf(stderr, "error: falta ataque en seccion PERSONAJE\n");
+        fprintf(stderr, "error: falta ataque\n");
         free(nombre);
         return -1;
     }
     pj->ataque = atoi(tok);
 
-    tok = siguiente_token();
+    tok = strtok_r(NULL, ";", &saveptr);
     if (tok == NULL)
     {
-        fprintf(stderr, "error: falta defensa en seccion PERSONAJE\n");
+        fprintf(stderr, "error: falta defensa\n");
         free(nombre);
         return -1;
     }
@@ -366,22 +233,12 @@ static int cargar_personaje(FILE *f, s_Personaje *pj, char **nombre_salida)
     return 0;
 }
 
-/**
- * @brief Lee y valida la seccion INVENTARIO.
- * Formato esperado: INVENTARIO;cantidad
- * Seguido de lineas: CARTA;nombre;tipo;valor;id
- *
- * Las cartas se cargan en una lista aparte: si algo falla, el inventario
- * de gs queda sin modificar.
- *
- * @param f archivo abierto
- * @param inv puntero donde se deja la lista con las cartas cargadas
- * @param nombre_personaje nombre del personaje (para liberar en caso de error)
- * @return 0 si ok, -1 si error.
- */
+// lee seccion INVENTARIO, deja las cartas en *inv si todo ok
 static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
 {
     char linea[PARTIDA_LINEA_MAX];
+    char copia[PARTIDA_LINEA_MAX];
+    char *saveptr;
     char *tok;
     int cantidad;
     int i;
@@ -390,22 +247,26 @@ static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
 
     if (!leer_linea(f, linea, sizeof(linea)))
     {
-        fprintf(stderr, "error: EOF inesperado leyendo seccion INVENTARIO\n");
+        fprintf(stderr, "error: falta INVENTARIO\n");
         free(nombre_personaje);
         return -1;
     }
 
-    if (!verificar_token(linea, "INVENTARIO"))
+    strncpy(copia, linea, sizeof(copia) - 1);
+    copia[sizeof(copia) - 1] = '\0';
+
+    tok = strtok_r(copia, ";", &saveptr);
+    if (tok == NULL || strcmp(tok, "INVENTARIO") != 0)
     {
-        fprintf(stderr, "error: formato invalido, se esperaba 'INVENTARIO'\n");
+        fprintf(stderr, "error: formato invalido\n");
         free(nombre_personaje);
         return -1;
     }
 
-    tok = siguiente_token();
+    tok = strtok_r(NULL, ";", &saveptr);
     if (tok == NULL)
     {
-        fprintf(stderr, "error: falta cantidad en seccion INVENTARIO\n");
+        fprintf(stderr, "error: falta cantidad\n");
         free(nombre_personaje);
         return -1;
     }
@@ -413,25 +274,20 @@ static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
 
     if (cantidad < 0 || cantidad > CARGA_MAX_ITEMS)
     {
-        fprintf(stderr, "error: cantidad de cartas invalida (%d), maximo %d\n",
-                cantidad, CARGA_MAX_ITEMS);
+        fprintf(stderr, "error: cantidad invalida\n");
         free(nombre_personaje);
         return -1;
     }
 
-    /* Las cartas se cargan en una lista aparte: si algo falla, el inventario
-     * de gs queda sin modificar. */
+    // cargo las cartas aparte: si algo falla, gs no se toca
     *inv = crear_inventario(NULL);
-
     if (*inv == NULL)
     {
-        fprintf(stderr, "error: no se pudo crear el inventario\n");
+        fprintf(stderr, "error: sin memoria\n");
         free(nombre_personaje);
         return -1;
     }
 
-    /* ultima = cabecera: cada carta se inserta despues de la anterior para
-     * conservar el orden del archivo */
     ultimo = *inv;
 
     for (i = 0; i < cantidad; i++)
@@ -445,7 +301,7 @@ static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
 
         if (!leer_linea(f, linea, sizeof(linea)))
         {
-            fprintf(stderr, "error: EOF inesperado leyendo carta %d de %d\n", i + 1, cantidad);
+            fprintf(stderr, "error: falta carta %d\n", i + 1);
             free(nombre_personaje);
             vaciar_inventario(*inv);
             free(*inv);
@@ -453,9 +309,13 @@ static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
             return -1;
         }
 
-        if (!verificar_token(linea, "CARTA"))
+        strncpy(copia, linea, sizeof(copia) - 1);
+        copia[sizeof(copia) - 1] = '\0';
+
+        tok = strtok_r(copia, ";", &saveptr);
+        if (tok == NULL || strcmp(tok, "CARTA") != 0)
         {
-            fprintf(stderr, "error: formato invalido, se esperaba 'CARTA' en linea %d\n", i + 1);
+            fprintf(stderr, "error: formato invalido\n");
             free(nombre_personaje);
             vaciar_inventario(*inv);
             free(*inv);
@@ -463,14 +323,15 @@ static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
             return -1;
         }
 
-        nom_tok = siguiente_token();
-        tipo_tok = siguiente_token();
-        valor_tok = siguiente_token();
-        id_tok = siguiente_token();
+        nom_tok   = strtok_r(NULL, ";", &saveptr);
+        tipo_tok  = strtok_r(NULL, ";", &saveptr);
+        valor_tok = strtok_r(NULL, ";", &saveptr);
+        id_tok    = strtok_r(NULL, ";", &saveptr);
 
-        if (nom_tok == NULL || tipo_tok == NULL || valor_tok == NULL || id_tok == NULL)
+        if (nom_tok == NULL || tipo_tok == NULL ||
+            valor_tok == NULL || id_tok == NULL)
         {
-            fprintf(stderr, "error: campos incompletos en carta %d (nombre;tipo;valor;id)\n", i + 1);
+            fprintf(stderr, "error: carta incompleta\n");
             free(nombre_personaje);
             vaciar_inventario(*inv);
             free(*inv);
@@ -481,15 +342,14 @@ static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
         strncpy(nombre_carta, nom_tok, sizeof(nombre_carta) - 1);
         nombre_carta[sizeof(nombre_carta) - 1] = '\0';
 
-        carta.nombre = nombre_carta;   /* prestado; agregar_carta copia */
+        carta.nombre = nombre_carta;
         carta.tipo   = (e_TipoCarta)atoi(tipo_tok);
         carta.valor  = atoi(valor_tok);
         carta.id     = atoi(id_tok);
 
         if (carta.id <= 0)
         {
-            fprintf(stderr, "error: id de carta invalido (%d) en la carta %d\n",
-                    carta.id, i + 1);
+            fprintf(stderr, "error: id invalido\n");
             free(nombre_personaje);
             vaciar_inventario(*inv);
             free(*inv);
@@ -500,73 +360,34 @@ static int cargar_inventario(FILE *f, Lista *inv, char *nombre_personaje)
         if (carta.id > max_id)
             max_id = carta.id;
 
-        /* agregar_carta() reserva memoria para el nodo (s_Inventario) y
-         * duplica el nombre: el nodo es dueno de la copia. */
         agregar_carta(*inv, carta, ultimo);
         ultimo = ultimo->next;
     }
 
-    /* El contador de ids queda sincronizado con los ids leidos: los ids
-     * nuevos no pueden colisionar con los de las cartas cargadas. */
     carta_fijar_ultimo_id(max_id);
-
     return 0;
 }
 
-/**
- * @brief Convierte texto de tipo de accion a enum TipoAccion.
- * @return valor del enum o -1 si desconocido.
- */
+// TODO: validar tipos
+// convierte texto a enum, -1 si no reconoce
 static int tipo_texto_a_enum(const char *texto)
 {
-    if (strcmp(texto, "A_CONSUMIBLE") == 0)
-    {
-        return A_CONSUMIBLE;
-    }
+    if (strcmp(texto, "A_CONSUMIBLE") == 0)  return A_CONSUMIBLE;
+    if (strcmp(texto, "A_REGISTRO") == 0)    return A_REGISTRO;
+    if (strcmp(texto, "A_COMBATE_I") == 0)   return A_COMBATE_I;
+    if (strcmp(texto, "A_COM_TURNO") == 0)   return A_COM_TURNO;
+    if (strcmp(texto, "A_FIN_COMBATE") == 0) return A_FIN_COMBATE;
+    if (strcmp(texto, "A_DESCARTE") == 0)    return A_DESCARTE;
 
-    if (strcmp(texto, "A_REGISTRO") == 0)
-    {
-        return A_REGISTRO;
-    }
-
-    if (strcmp(texto, "A_COMBATE_I") == 0)
-    {
-        return A_COMBATE_I;
-    }
-
-    if (strcmp(texto, "A_COM_TURNO") == 0)
-    {
-        return A_COM_TURNO;
-    }
-
-    if (strcmp(texto, "A_FIN_COMBATE") == 0)
-    {
-        return A_FIN_COMBATE;
-    }
-
-    if (strcmp(texto, "A_DESCARTE") == 0)
-    {
-        return A_DESCARTE;
-    }
-
-    fprintf(stderr, "error: tipo de accion desconocido '%s'\n", texto);
     return -1;
 }
 
-/**
- * @brief Lee y valida la seccion HISTORIAL.
- * Formato esperado: HISTORIAL;cantidad
- * Seguido de lineas: ACCION;tipo;descripcion
- * Las acciones se guardan de mas viejo a mas nuevo en el archivo,
- * asi que al hacer push secuencial la pila queda correcta (mas nuevo en tope).
- * @param f archivo abierto
- * @param gs estado del juego (para acceder/crear historial)
- * @param nombre_personaje nombre del personaje (para liberar en caso de error)
- * @return 0 si ok, -1 si error.
- */
+// lee seccion HISTORIAL, deja la pila en gs si todo ok
 static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
 {
     char linea[PARTIDA_LINEA_MAX];
+    char copia[PARTIDA_LINEA_MAX];
+    char *saveptr;
     char *tok;
     int cantidad;
     int i;
@@ -574,22 +395,26 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
 
     if (!leer_linea(f, linea, sizeof(linea)))
     {
-        fprintf(stderr, "error: EOF inesperado leyendo seccion HISTORIAL\n");
+        fprintf(stderr, "error: falta HISTORIAL\n");
         free(nombre_personaje);
         return -1;
     }
 
-    if (!verificar_token(linea, "HISTORIAL"))
+    strncpy(copia, linea, sizeof(copia) - 1);
+    copia[sizeof(copia) - 1] = '\0';
+
+    tok = strtok_r(copia, ";", &saveptr);
+    if (tok == NULL || strcmp(tok, "HISTORIAL") != 0)
     {
-        fprintf(stderr, "error: formato invalido, se esperaba 'HISTORIAL'\n");
+        fprintf(stderr, "error: formato invalido\n");
         free(nombre_personaje);
         return -1;
     }
 
-    tok = siguiente_token();
+    tok = strtok_r(NULL, ";", &saveptr);
     if (tok == NULL)
     {
-        fprintf(stderr, "error: falta cantidad en seccion HISTORIAL\n");
+        fprintf(stderr, "error: falta cantidad\n");
         free(nombre_personaje);
         return -1;
     }
@@ -597,19 +422,16 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
 
     if (cantidad < 0 || cantidad > CARGA_MAX_ITEMS)
     {
-        fprintf(stderr, "error: cantidad de acciones invalida (%d), maximo %d\n",
-                cantidad, CARGA_MAX_ITEMS);
+        fprintf(stderr, "error: cantidad invalida\n");
         free(nombre_personaje);
         return -1;
     }
 
-    /* El historial se arma aparte y solo se instala en gs cuando toda la
-     * seccion se cargo bien: si algo falla, gs queda sin modificar. */
+    // armo el historial aparte igual que el inventario
     hist = historial_make_empty();
-
     if (hist == NULL)
     {
-        fprintf(stderr, "error: no se pudo crear historial\n");
+        fprintf(stderr, "error: sin memoria\n");
         free(nombre_personaje);
         return -1;
     }
@@ -624,26 +446,30 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
 
         if (!leer_linea(f, linea, sizeof(linea)))
         {
-            fprintf(stderr, "error: EOF inesperado leyendo accion %d de %d\n", i + 1, cantidad);
+            fprintf(stderr, "error: falta accion %d\n", i + 1);
             free(nombre_personaje);
             historial_free(&hist);
             return -1;
         }
 
-        if (!verificar_token(linea, "ACCION"))
+        strncpy(copia, linea, sizeof(copia) - 1);
+        copia[sizeof(copia) - 1] = '\0';
+
+        tok = strtok_r(copia, ";", &saveptr);
+        if (tok == NULL || strcmp(tok, "ACCION") != 0)
         {
-            fprintf(stderr, "error: formato invalido, se esperaba 'ACCION' en linea %d\n", i + 1);
+            fprintf(stderr, "error: formato invalido\n");
             free(nombre_personaje);
             historial_free(&hist);
             return -1;
         }
 
-        tipo_tok = siguiente_token();
-        desc_tok = siguiente_token();
+        tipo_tok = strtok_r(NULL, ";", &saveptr);
+        desc_tok = strtok_r(NULL, ";", &saveptr);
 
         if (tipo_tok == NULL || desc_tok == NULL)
         {
-            fprintf(stderr, "error: campos incompletos en accion %d (tipo;descripcion)\n", i + 1);
+            fprintf(stderr, "error: accion incompleta\n");
             free(nombre_personaje);
             historial_free(&hist);
             return -1;
@@ -658,45 +484,27 @@ static int cargar_historial(FILE *f, s_GameState *gs, char *nombre_personaje)
         t = tipo_texto_a_enum(tipo_txt);
         if (t < 0)
         {
-            fprintf(stderr, "aviso: tipo de accion desconocido '%s', se omite\n", tipo_txt);
+            fprintf(stderr, "aviso: tipo desconocido, se omite\n");
             continue;
         }
 
-        /* historial_push() reserva memoria para un nuevo nodo (s_NodoHistorial)
-         * y para copiar la descripcion (strdup). */
         if (historial_push(hist, desc, (TipoAccion)t) != 0)
         {
-            fprintf(stderr, "error: fallo al agregar accion al historial\n");
+            fprintf(stderr, "error: fallo push\n");
             free(nombre_personaje);
             historial_free(&hist);
             return -1;
         }
     }
 
-    /* Todo salio bien: se reemplaza el historial de gs por el recien cargado */
     historial_free(&gs->Historial);
     gs->Historial = hist;
-
     return 0;
 }
 
-/* Funcion principal de carga */
-
 /**
  * @brief Carga el estado del juego desde un archivo CSV.
- * Si el archivo no existe o esta corrupto, deja gs sin modificar y
- * devuelve -1. El llamador decide si arrancar una partida nueva.
- *
- * Formato del archivo:
- *   linea 1: PERSONAJE;nombre;vida;vidaMax;ataque;defensa
- *   linea 2: INVENTARIO;cantidad
- *   lineas siguientes: CARTA;nombre;tipo;valor;id   (una por carta)
- *   linea siguiente: HISTORIAL;cantidad
- *   lineas siguientes: ACCION;tipo;descripcion   (una por accion)
- *
- * @param gs    Estado del juego destino (no NULL).
- * @param ruta  Ruta del archivo (si NULL, usa PARTIDA_RUTA).
- * @return 0 si todo va bien, -1 en caso de error.
+ * @author [NOMBRE]
  */
 int partida_cargar(s_GameState *gs, const char *ruta)
 {
@@ -707,24 +515,19 @@ int partida_cargar(s_GameState *gs, const char *ruta)
 
     if (gs == NULL)
     {
-        fprintf(stderr, "error: estado de juego invalido (NULL)\n");
+        fprintf(stderr, "error: estado NULL\n");
         return -1;
     }
 
     if (ruta == NULL)
-    {
         ruta = PARTIDA_RUTA;
-    }
 
     f = fopen(ruta, "r");
     if (f == NULL)
     {
-        fprintf(stderr, "error: no se pudo abrir archivo '%s' para lectura\n", ruta);
+        fprintf(stderr, "error: no se pudo abrir '%s'\n", ruta);
         return -1;
     }
-
-    /* Cargar cada seccion secuencialmente. Si alguna falla, liberamos
-     * lo reservado y devolvemos error sin modificar gs. */
 
     if (cargar_personaje(f, &pj, &nombre_personaje) != 0)
     {
@@ -748,33 +551,24 @@ int partida_cargar(s_GameState *gs, const char *ruta)
 
     fclose(f);
 
-    /* Todo salio bien: se aplica el inventario cargado al estado real */
     if (gs->inventario != NULL)
     {
         vaciar_inventario(gs->inventario);
         free(gs->inventario);
     }
-
     gs->inventario = inv;
 
-    /* Liberar nombre anterior del personaje si existe.
-     * Este nombre fue reservado con strdup() en una carga anterior
-     * y pertenece a gs->personaje.nombre. */
     if (gs->personaje.nombre != NULL)
     {
         char *tmp = (char *)gs->personaje.nombre;
         free(tmp);
     }
 
-    /* Todo salio bien: aplicar al estado real */
     gs->personaje = pj;
     gs->ejecutando = true;
-    if (gs->Historial != NULL)
-    {
-        gs->Historial->HayReversionPendiente = false;  /* partida cargada: sin undo */
-    }
 
-    /* nombre_personaje NO se libera aqui: ahora es propiedad de gs->personaje.nombre
-     * Se liberara cuando se destruya el personaje o se cargue otra partida */
+    if (gs->Historial != NULL)
+        gs->Historial->HayReversionPendiente = false;
+
     return 0;
 }
